@@ -1,0 +1,23 @@
+{
+  "name": "umenbot",
+  "version": "1.0.0",
+  "description": "`Projekt bota na discord.js v14 `",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/galusgaming/UmenBot.git"
+  },
+  "author": "Tomasz Gała \"Galus\"",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/galusgaming/UmenBot/issues"
+  },
+  "homepage": "https://github.com/galusgaming/UmenBot#readme",
+  "dependencies": {
+    "discord.js": "^14.7.1",
+    "dotenv": "^16.0.3"
+  }
+}
