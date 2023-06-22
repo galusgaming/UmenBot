@@ -4,7 +4,7 @@
   "description": "`Projekt bota na discord.js v14 `",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node ./src/index.js"
   },
   "repository": {
     "type": "git",
@@ -17,8 +17,15 @@
   },
   "homepage": "https://github.com/galusgaming/UmenBot#readme",
   "dependencies": {
+    "ascii-table": "^0.0.9",
+    "ascii-tables": "^0.0.1",
     "discord.js": "^14.7.1",
-    "dotenv": "^16.0.3"
+    "dotenv": "^16.0.3",
+    "glob": "^10.3.0",
+    "path": "^0.12.7",
+    "unil": "^1.0.0",
+    "until": "^0.1.1",
+    "util": "^0.12.5"
   },
   "devDependencies": {
     "eslint": "^8.31.0"
