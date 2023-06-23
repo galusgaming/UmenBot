@@ -10,6 +10,11 @@ const {loadEvents} = require("./handlers/eventHandler")
 client.config = require("./configs/config.js") 
 client.events = new Collection()
 client.commands = new Collection()
+
+const {connect} = require('mongoose')
+connect(client.config.DatabaseURL, {
+}).then(()=> console.log("Klient połączony z bazą danych MongoDB"))
+
 loadEvents(client)
 
 client.on("ready", message=>{
