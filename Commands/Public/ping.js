@@ -1,22 +1,28 @@
-const { ChatInputCommandInteraction, SlashCommandBuilder, Client } = require("discord.js")
+const {
+  ChatInputCommandInteraction,
+  SlashCommandBuilder,
+  Client,
+} = require("discord.js");
 module.exports = {
-    data:new SlashCommandBuilder()
+  data: new SlashCommandBuilder()
     .setName("ping")
     .setDescription("Zwraca nam pong"),
-     /**
-      * 
-      * @param {ChatInputCommandInteraction} interaction
-      * @param {Client} client 
-      */
+  /**
+   *
+   * @param {ChatInputCommandInteraction} interaction
+   * @param {Client} client
+   */
 
-    async execute(interacton,client){
-        await interacton.deferReply()
+  async execute(interaction, client) {
+    await interaction.deferReply();
 
-        const reply = await interacton.fetchReply()
+    const reply = await interaction.fetchReply();
 
+    const ping = reply.createdTimestamp - interaction.createdTimestamp;
 
-        const ping = reply.createdTimestamp-interacton.createdTimestamp
-
-    interacton.editReply({content:`🏓latency: Client: ${ping}ms | Websocket ${client.ws.ping}`,ephemeral:true});
-    }
-}
+    interaction.editReply({
+      content: `🏓latency: Client: ${ping}ms | Websocket ${client.ws.ping}`,
+      ephemeral: true,
+    });
+  },
+};

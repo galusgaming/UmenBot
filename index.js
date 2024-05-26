@@ -1,23 +1,34 @@
-const { Client, GatewayIntentBits, Partials, Collection, ActivityType } = require("discord.js")
-const {Gulds, GuildMembers, GuildMessages }= GatewayIntentBits
-const {User, Message, GuildMember, ThreadMember} = Partials
+const {
+  Client,
+  GatewayIntentBits,
+  Partials,
+  Collection,
+  ActivityType,
+} = require("discord.js");
+const { Guilds, GuildMembers, GuildMessages } = GatewayIntentBits;
+const { User, Message, GuildMember, ThreadMember } = Partials;
 const client = new Client({
-	intents:["Guilds"],
-	partials:[User,Message,GuildMember,ThreadMember]
-})
+  intents: [Guilds, GuildMembers, GuildMessages],
+  partials: [User, Message, GuildMember, ThreadMember],
+});
+const { loadCommands } = require("./handlers/commandHandler");
+const { loadEvents } = require("./handlers/eventHandler");
+client.config = require("./configs/config.js");
+client.events = new Collection();
+client.commands = new Collection();
+client.devCommands = new Collection();
+loadCommands(client);
 
-const {loadEvents} = require("./handlers/eventHandler")
-client.config = require("./configs/config.js") 
-client.events = new Collection()
-client.commands = new Collection()
+// const { connect } = require("mongoose");
+// connect(client.config.DatabaseURL, {}).then(() =>
+//   console.log("Klient połączony z bazą danych MongoDB")
+// );
 
-const {connect} = require('mongoose')
-connect(client.config.DatabaseURL, {
-}).then(()=> console.log("Klient połączony z bazą danych MongoDB"))
+loadEvents(client);
 
-loadEvents(client)
-
-client.on("ready", message=>{
-	client.user.setActivity('Bot w trakcie prac serwisowych!');
-})
-client.login(client.config.token)
+client.on("ready", (message) => {
+  console.log(client.commands);
+  console.log(client.devCommands);
+  client.user.setPresence("🛠️Bot w trakcie prac serwisowych!🛠️");
+});
+client.login(client.config.token);
