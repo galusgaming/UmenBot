@@ -30,5 +30,8 @@ client.on("ready", (message) => {
 
   // console.log(client.devCommands);
   client.user.setStatus("dnd");
+  client.user.setActivity("Użyj /help", {
+    type: ActivityType.LISTENING,
+  });
 });
 client.login(client.config.token);

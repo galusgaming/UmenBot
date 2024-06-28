@@ -11,8 +11,5 @@ module.exports = {
     // console.log(client.commands);
     // console.log(client.devCommands);
     console.log("Klient jest gotowy!");
-    client.user.setActivity("Użyj /help", {
-      type: ActivityType.LISTENING,
-    });
   },
 };
