@@ -17,7 +17,6 @@ client.config = require("./configs/config.js");
 client.events = new Collection();
 client.commands = new Collection();
 client.devCommands = new Collection();
-loadCommands(client);
 // console.log(client.commands);
 // const { connect } = require("mongoose");
 // connect(client.config.DatabaseURL, {}).then(() =>
@@ -25,6 +24,7 @@ loadCommands(client);
 // );
 
 client.on("ready", (message) => {
+  loadCommands(client);
   loadEvents(client);
   console.log(client.commands);
 

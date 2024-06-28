@@ -8,10 +8,17 @@ const {
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("banuj")
+    .setName("ban")
     .setDescription(
       "Banuje użytkownika, komenda jedynie dla osób z administracji"
-    ),
+    )
+    .addUserOption((option) =>
+      option
+        .setName("użytkownik")
+        .setDescription("Użytkownik do zbanowania")
+        .setRequired(true)
+    )
+    .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
 
   /**
    * @param {ChatInputCommandInteraction} interaction
@@ -25,19 +32,7 @@ module.exports = {
       .setTitle("Informacje o Bocie")
       .setColor(0x3399ff)
       .setThumbnail("https://i.ibb.co/RHf1rBV/UMEN-bot.png")
-      .setDescription(description)
-      .addFields(
-        {
-          name: "Autor",
-          value: botAuthor,
-          inline: true,
-        },
-        {
-          name: "Wersja",
-          value: botVersion,
-          inline: true,
-        }
-      );
+      .setDescription("hej");
 
     interaction.editReply({ embeds: [embed] });
   },
