@@ -6,8 +6,8 @@ module.exports = {
   once: true,
   execute(client) {
     // // client.devCommands = new Collection();
-    client.commands = new Collection();
-    loadCommands(client);
+    // client.commands = new Collection();
+    // loadCommands(client);
     // console.log(client.commands);
     // console.log(client.devCommands);
     console.log("Klient jest gotowy!");

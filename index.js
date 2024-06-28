@@ -18,17 +18,17 @@ client.events = new Collection();
 client.commands = new Collection();
 client.devCommands = new Collection();
 loadCommands(client);
-
+// console.log(client.commands);
 // const { connect } = require("mongoose");
 // connect(client.config.DatabaseURL, {}).then(() =>
 //   console.log("Klient połączony z bazą danych MongoDB")
 // );
 
-loadEvents(client);
-
 client.on("ready", (message) => {
-  console.log(client.commands);
-  console.log(client.devCommands);
+  loadEvents(client);
+  // console.log(client.commands);
+
+  // console.log(client.devCommands);
   client.user.setPresence("🛠️Bot w trakcie prac serwisowych!🛠️");
 });
 client.login(client.config.token);

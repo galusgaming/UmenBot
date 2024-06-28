@@ -1,4 +1,11 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const {
+  SlashCommandBuilder,
+  EmbedBuilder,
+  Message,
+  ActionRowBuilder,
+  StringSelectMenuBuilder,
+} = require("discord.js");
+const fs = require("fs");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("help")
@@ -10,27 +17,74 @@ module.exports = {
    */
   async execute(interaction, client) {
     await interaction.deferReply();
-    const data = [];
-    const devData = [];
-    data.push("Help & Resources Commands");
-    data.push(client.commands);
+    const commandFolders = fs
+      .readdirSync("./Commands")
+      .filter((folder) => !folder.startsWith("."));
+    const commandByCategory = {};
+    for (const folder of commandFolders) {
+      const commandFiles = fs
+        .readdirSync(`./Commands/${folder}`)
+        .filter((file) => file.endsWith(".js"));
+      const commands = [];
+      for (const file of commandFiles) {
+        const { default: command } = await import(`../${folder}/${file}`);
+        commands.push({
+          name: command.data.name,
+          description: command.data.description,
+        });
+      }
+      commandByCategory[folder] = commands;
+    }
+    const dropdownOption = Object.keys(commandByCategory).map((folder) => ({
+      label: folder,
+      value: folder,
+    }));
+
+    const selectMenu = new StringSelectMenuBuilder()
+      .setCustomId("helpMenu")
+      .setPlaceholder("Select a category")
+      .addOptions(
+        ...dropdownOption.map((option) => ({
+          label: option.label,
+          value: option.value,
+        }))
+      );
+
     const embed = new EmbedBuilder()
       .setTitle("Help Center")
       .setColor(0x3399ff)
-      .setDescription("Help Command Guide")
-      .addFields({
-        name: "Page 1",
-        value: "Help & Resources Commands (button1)",
-      })
-      .addFields({ name: "Page 2", value: "Moderation Commands (button2)" })
-      .addFields({ name: "Page 3", value: "Developer Commands (button3)" });
-    const embed2 = new EmbedBuilder()
-      .setColor(0x3399ff)
-      .setTitle("Community Commands")
-      .addFields();
+      .setDescription("Wybierz kategorię komend")
+      .setThumbnail(`${client.user.displayAvatarURL()}`)
+      .setFooter({
+        text: `Requested by ${interaction.user.tag}`,
+        iconURL: interaction.user.displayAvatarURL(),
+      });
+    const row = new ActionRowBuilder().addComponents(selectMenu);
+
     interaction.editReply({
-      content: data.toString(),
-      ephemeral: true,
+      embeds: [embed],
+      components: [row],
+    });
+    const filter = (i) => i.isStringSelectMenu() && i.customId === "helpMenu";
+
+    const collector = interaction.channel.createMessageComponentCollector({
+      filter,
+      time: 15000,
+    });
+    collector.on("collect", async (i) => {
+      const selectedCategory = i.values[0];
+      const categoryCommands = commandByCategory[selectedCategory];
+      const categoryEmbed = new EmbedBuilder()
+        .setTitle(`${selectedCategory} Commands!`)
+        .setDescription("Here are the commands in this category")
+        .setThumbnail(`${client.user.displayAvatarURL()}`)
+        .addFields(
+          categoryCommands.map((command) => ({
+            name: command.name,
+            value: command.description,
+          }))
+        );
+      await i.update({ embeds: [categoryEmbed] });
     });
   },
 };
