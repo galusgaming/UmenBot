@@ -73,7 +73,6 @@ module.exports = {
 
     const collector = interaction.channel.createMessageComponentCollector({
       filter,
-      time: 15000,
     });
     collector.on("collect", async (i) => {
       const selectedCategory = i.values[0];
@@ -81,6 +80,7 @@ module.exports = {
       const categoryEmbed = new EmbedBuilder()
         .setTitle(`${selectedCategory} Commands!`)
         .setDescription("Here are the commands in this category")
+        .setColor(0x3399ff)
         .setThumbnail(`${client.user.displayAvatarURL()}`)
         .addFields(
           categoryCommands.map((command) => ({
