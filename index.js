@@ -26,9 +26,12 @@ loadCommands(client);
 
 client.on("ready", (message) => {
   loadEvents(client);
-  // console.log(client.commands);
+  console.log(client.commands);
 
   // console.log(client.devCommands);
-  client.user.setPresence("🛠️Bot w trakcie prac serwisowych!🛠️");
+  client.user.setStatus("dnd");
+  client.user.setActivity("Użyj /help", {
+    type: ActivityType.LISTENING,
+  });
 });
 client.login(client.config.token);

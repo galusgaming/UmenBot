@@ -28,10 +28,14 @@ module.exports = {
       const commands = [];
       for (const file of commandFiles) {
         const { default: command } = await import(`../${folder}/${file}`);
-        commands.push({
-          name: command.data.name,
-          description: command.data.description,
-        });
+        if (!command.data) {
+          continue;
+        } else {
+          commands.push({
+            name: command.data.name,
+            description: command.data.description,
+          });
+        }
       }
       commandByCategory[folder] = commands;
     }
