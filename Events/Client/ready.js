@@ -7,9 +7,12 @@ module.exports = {
   execute(client) {
     // // client.devCommands = new Collection();
     // client.commands = new Collection();
-    // loadCommands(client);
+    loadCommands(client);
     // console.log(client.commands);
     // console.log(client.devCommands);
     console.log("Klient jest gotowy!");
+    client.user.setActivity("Użyj /help", {
+      type: ActivityType.LISTENING,
+    });
   },
 };

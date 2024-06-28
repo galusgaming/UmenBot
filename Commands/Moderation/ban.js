@@ -3,14 +3,16 @@ const {
   ChatInputCommandInteraction,
   Client,
   EmbedBuilder,
+  PermissionFlagsBits,
 } = require("discord.js");
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("ban")
+    .setName("banuj")
     .setDescription(
       "Banuje użytkownika, komenda jedynie dla osób z administracji"
     ),
+
   /**
    * @param {ChatInputCommandInteraction} interaction
    * @param {Client} client
