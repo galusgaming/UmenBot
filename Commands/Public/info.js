@@ -13,7 +13,7 @@ const { name } = require("../../Events/Client/ready.js");
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("infoo")
+    .setName("info")
     .setDescription("Podstawowe informacje na temat bota"),
   /**
    *@param {Channel} channel
