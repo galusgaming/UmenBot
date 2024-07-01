@@ -9,18 +9,22 @@ async function loadCommands(client) {
 
   const Files = await loadFiles("Commands");
   Files.forEach((file) => {
-    const command = require(file);
-    client.commands.set(command.data.name, command);
-
-    commandsArray.push(command.data.toJSON());
-    table.addRow(command.data.name, "✅");
+    try {
+      const command = require(file);
+      client.commands.set(command.data.name, command);
+      commandsArray.push(command.data.toJSON());
+      table.addRow(command.data.name, "✅");
+    } catch (error) {
+      table.addRow(file.split().pop().slice(0, -3), "❌");
+    }
   });
 
   client.application.commands.set(commandsArray);
-
+  // console.log(commandsArray);
   console.log(table.toString());
   console.info("\n\x1b[36m%s\x1b[0m", "loaded Commands");
 }
+module.exports = { loadCommands };
 // const { loadFiles } = require("../Function/fileLoader");
 // const ascii = require("ascii-table");
 // const table = new ascii().setHeading("commands", "status");
@@ -56,5 +60,3 @@ async function loadCommands(client) {
 //   console.table(commands, ["command", "Status"]);
 //   console.info("\n\x1b[36m%s\x1b[0m", "loaded commands");
 // }
-
-module.exports = { loadCommands };

@@ -30,6 +30,8 @@ module.exports = {
     )
     .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
   async execute(interaction, client) {
+    if (!interaction.inGuild())
+      return interaction.reply("Nie możesz użyć tej komendy poza serwerem!");
     const target = interaction.options.getString("user");
     const reason = interaction.options.getString("reason");
 

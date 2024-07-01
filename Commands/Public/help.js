@@ -59,8 +59,12 @@ module.exports = {
       .setColor(0x3399ff)
       .setDescription("Wybierz kategorię komend")
       .setThumbnail(`${client.user.displayAvatarURL()}`)
+      .setAuthor({
+        name: "UmenBot",
+        iconURL: client.user.displayAvatarURL(),
+      })
       .setFooter({
-        text: `Requested by ${interaction.user.tag}`,
+        text: `Requested by @${interaction.user.tag}`,
         iconURL: interaction.user.displayAvatarURL(),
       });
     const row = new ActionRowBuilder().addComponents(selectMenu);
@@ -78,8 +82,8 @@ module.exports = {
       const selectedCategory = i.values[0];
       const categoryCommands = commandByCategory[selectedCategory];
       const categoryEmbed = new EmbedBuilder()
-        .setTitle(`${selectedCategory} Commands!`)
-        .setDescription("Here are the commands in this category")
+        .setTitle(`${selectedCategory}`)
+        .setDescription("Tutaj znajdziesz wszystkie komendy z danej kategorii")
         .setColor(0x3399ff)
         .setThumbnail(`${client.user.displayAvatarURL()}`)
         .addFields(
@@ -87,7 +91,15 @@ module.exports = {
             name: command.name,
             value: command.description,
           }))
-        );
+        )
+        .setAuthor({
+          name: "UmenBot",
+          iconURL: client.user.displayAvatarURL(),
+        })
+        .setFooter({
+          text: `Requested by @${interaction.user.tag}`,
+          iconURL: interaction.user.displayAvatarURL(),
+        });
       await i.update({ embeds: [categoryEmbed] });
     });
   },

@@ -1,6 +1,8 @@
 const { ChatInputCommandInteraction } = require("discord.js");
+const { event } = require("../Client/ready");
 module.exports = {
   name: "interactionCreate",
+  event: "interactionCreate",
   /**
    *
    * @param {ChatInputCommandInteraction} interaction
@@ -23,6 +25,10 @@ module.exports = {
       command.execute(interaction, client);
     } catch (error) {
       console.log(error);
+      return interaction.reply({
+        content: "There was an error while executing this command",
+        ephemeral: true,
+      });
     }
   },
 };

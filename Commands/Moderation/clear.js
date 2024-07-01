@@ -28,6 +28,8 @@ module.exports = {
     )
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
   async execute(interaction, client) {
+    if (!interaction.inGuild())
+      return interaction.reply("Nie możesz użyć tej komendy poza serwerem!");
     const { options, channel } = interaction;
     let amount = options.getInteger("amount");
     const target = options.getUser("target");
@@ -49,7 +51,7 @@ module.exports = {
       }
       if (amount > channelMessages.size) amount = channelMessages.size;
       const clearEmbed = new EmbedBuilder().setColor(0x3399ff);
-      await interaction.deferReply({ ephemeral: true });
+      await interaction.deferReply({ ephemeral: false });
       let messagesToDelete = [];
       if (target) {
         let i = 0;
@@ -61,12 +63,12 @@ module.exports = {
         });
 
         clearEmbed.setDescription(
-          `\`✅\`Usunięto ${messagesToDelete.length} ${multiMsg} od ${target} z kanału ${channel}`
+          `\`✅\`Usunięto ${messagesToDelete.length} ${multiMsg} od ${target} z kanału ${channel} przez ${interaction.user}`
         );
       } else {
         messagesToDelete = channelMessages.first(amount);
         clearEmbed.setDescription(
-          `\`✅\`Usunięto ${messagesToDelete.length} ${multiMsg} z kanału ${channel}`
+          `\`✅\`Usunięto ${messagesToDelete.length} ${multiMsg} z kanału ${channel} przez ${interaction.user}`
         );
       }
       if (messagesToDelete.length > 0) {
