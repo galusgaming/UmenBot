@@ -4,7 +4,7 @@
 
 Obecnie jest w fazie rozwoju i powstawania **_korzystasz na własną odpowiedzialność_**
 
-- Aktualna wersja 0.1ALPHA
+- Aktualna wersja 0.0.2ALPHA
 - Autor: GalusGaming
 - Discord: `galusgaming4096`
 
