@@ -10,7 +10,7 @@ Obecnie jest w fazie rozwoju i powstawania **_korzystasz na własną odpowiedzia
 
 ---
 
----
+# [Change Log](CHANGELOG.md)
 
 ---
 
