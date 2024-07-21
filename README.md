@@ -18,7 +18,7 @@ Obecnie jest w fazie rozwoju i powstawania **_korzystasz na własną odpowiedzia
 >
 > ---
 >
-> 1.  Unban
+> 1.  ~~Unban~~
 > 2.  Warn system
 > 3.  Tickets system
 > 4.  commands to have fun

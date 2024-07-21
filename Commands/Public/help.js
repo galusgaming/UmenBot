@@ -46,7 +46,7 @@ module.exports = {
 
     const selectMenu = new StringSelectMenuBuilder()
       .setCustomId("helpMenu")
-      .setPlaceholder("Select a category")
+      .setPlaceholder("Wybierz katergorię")
       .addOptions(
         ...dropdownOption.map((option) => ({
           label: option.label,
