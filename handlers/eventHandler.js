@@ -20,6 +20,7 @@ async function loadEvents(client) {
         client.events.set(event.name, execute);
         events.push({ Event: event.name, Status: "✅" });
       } catch (error) {
+        console.log(error);
         events.push({
           Event: file.split("/").pop().slice(0, -3),
           Status: "🛑",

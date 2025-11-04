@@ -3,7 +3,6 @@ const warnSchema = new Schema({
   userID: {
     type: String,
     required: true,
-    unique: true,
   },
   guildID: {
     type: String,
@@ -15,4 +14,7 @@ const warnSchema = new Schema({
   },
 });
 
-module.exports = model("warn", warnSchema);
+// ensure unique per guild per user
+warnSchema.index({ guildID: 1, userID: 1 }, { unique: true });
+
+module.exports = model("userWarn", warnSchema);
