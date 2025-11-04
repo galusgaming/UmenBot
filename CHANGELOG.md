@@ -8,3 +8,5 @@
 - Poprawka Drobnych błędów
 - Dodanie połączenia z MongoDB
 - Dodanie Level System wraz z Canvas'em
+### V1.0.3d
+- Dodanie komned, które wysyłają gify z zwierzaczkami
