@@ -10,3 +10,6 @@
 - Dodanie Level System wraz z Canvas'em
 ### V1.0.3d
 - Dodanie komned, które wysyłają gify z zwierzaczkami
+### v1.2.0
+- Dodanie systemu warnów, (dodawanie,usuwanie,listowanie taryfikatora) oraz nadawanie i usuwanie warnów z użytkowników
+- dodanie konfiguracji Dockera (mam nadzieje że działa xD)
