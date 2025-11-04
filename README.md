@@ -9,7 +9,7 @@ Lekki i modularny bot Discord oparty o discord.js v14 — moderacja, poziomy, in
 [![license](https://img.shields.io/badge/license-ISC-blue.svg)](./LICENSE)
 ![status](https://img.shields.io/badge/status-ALPHA-orange)
 ![docker](https://img.shields.io/badge/docker-ready-2496ED?logo=docker&logoColor=white)
-![version](https://img.shields.io/badge/status-v1.2.0-blue)
+![version](https://img.shields.io/badge/version-v1.2.0-blue)
 
 </div>
 
