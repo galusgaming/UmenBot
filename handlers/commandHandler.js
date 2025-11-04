@@ -15,6 +15,7 @@ async function loadCommands(client) {
       commandsArray.push(command.data.toJSON());
       table.addRow(command.data.name, "✅");
     } catch (error) {
+      console.log(error);
       table.addRow(file.split().pop().slice(0, -3), "❌");
     }
   });

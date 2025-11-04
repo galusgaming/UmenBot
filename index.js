@@ -33,7 +33,8 @@ client.commands = new Collection();
 // );
 (async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI, {});
+    const dbUrl = client.config.DatabaseURL || process.env.MONGODB_URI || process.env.MONGODB_URL;
+    await mongoose.connect(dbUrl, {});
     console.log(chalk.green("Połączono z bazą danych MongoDB"));
 
     loadEvents(client);

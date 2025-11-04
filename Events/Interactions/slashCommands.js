@@ -1,7 +1,7 @@
 const { ChatInputCommandInteraction } = require("discord.js");
 const { event } = require("../Client/ready");
 module.exports = {
-  name: "interactionCreate",
+  name: "SlashCommands",
   event: "interactionCreate",
   /**
    *
