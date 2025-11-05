@@ -1,15 +1,15 @@
 const { loadCommands } = require("../../handlers/commandHandler");
 const { Client, ActivityType, Collection } = require("discord.js");
 const client = Client;
+const chalk = require("chalk");
 module.exports = {
   name: "ready",
+  event: "ready",
   once: true,
   execute(client) {
-    // // client.devCommands = new Collection();
-    // client.commands = new Collection();
-    // loadCommands(client);
+    loadCommands(client);
     // console.log(client.commands);
     // console.log(client.devCommands);
-    console.log("Klient jest gotowy!");
+    console.log(chalk.blue.bgRed.bold("Klient jest gotowy!"));
   },
 };

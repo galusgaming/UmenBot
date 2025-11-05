@@ -3,6 +3,7 @@ const {
   SlashCommandBuilder,
   Client,
   EmbedBuilder,
+  DMChannel,
 } = require("discord.js");
 const {
   botAuthor,
@@ -40,7 +41,15 @@ module.exports = {
           value: botVersion,
           inline: true,
         }
-      );
+      )
+      .setAuthor({
+        name: "UmenBot",
+        iconURL: client.user.displayAvatarURL(),
+      })
+      .setFooter({
+        text: `Requested by ${interaction.user.tag}`,
+        iconURL: interaction.user.displayAvatarURL(),
+      });
 
     interaction.editReply({ embeds: [embed] });
   },

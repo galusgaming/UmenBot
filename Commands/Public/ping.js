@@ -7,6 +7,7 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("ping")
     .setDescription("Zwraca nam pong"),
+
   /**
    *
    * @param {ChatInputCommandInteraction} interaction

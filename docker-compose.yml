@@ -1,0 +1,12 @@
+version: '3.8'
+services:
+  umenbot:
+    build: .
+    image: umenbot:latest
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - .:/usr/src/app:ro
+    # no ports exposed; the bot makes outbound connections to Discord
+    # If you need to persist database or other files, mount them here

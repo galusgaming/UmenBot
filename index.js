@@ -5,30 +5,42 @@ const {
   Collection,
   ActivityType,
 } = require("discord.js");
-const { Guilds, GuildMembers, GuildMessages } = GatewayIntentBits;
+const { Guilds, GuildMembers, GuildMessages, MessageContent, DirectMessages } =
+  GatewayIntentBits;
 const { User, Message, GuildMember, ThreadMember } = Partials;
 const client = new Client({
-  intents: [Guilds, GuildMembers, GuildMessages],
+  intents: [
+    Guilds,
+    GuildMembers,
+    GuildMessages,
+    MessageContent,
+    DirectMessages,
+  ],
   partials: [User, Message, GuildMember, ThreadMember],
 });
-const { loadCommands } = require("./handlers/commandHandler");
 const { loadEvents } = require("./handlers/eventHandler");
+const { loadCommands } = require("./handlers/commandHandler");
+const mongoose = require("mongoose");
+const chalk = require("chalk");
 client.config = require("./configs/config.js");
 client.events = new Collection();
 client.commands = new Collection();
-client.devCommands = new Collection();
-loadCommands(client);
+
 // console.log(client.commands);
 // const { connect } = require("mongoose");
 // connect(client.config.DatabaseURL, {}).then(() =>
 //   console.log("Klient połączony z bazą danych MongoDB")
 // );
+(async () => {
+  try {
+    const dbUrl = client.config.DatabaseURL || process.env.MONGODB_URI || process.env.MONGODB_URL;
+    await mongoose.connect(dbUrl, {});
+    console.log(chalk.green("Połączono z bazą danych MongoDB"));
 
-client.on("ready", (message) => {
-  loadEvents(client);
-  // console.log(client.commands);
+    loadEvents(client);
+  } catch (error) {
+    console.log(chalk.red("Nie udało się połączyć z bazą danych MongoDB"));
+  }
+})();
 
-  // console.log(client.devCommands);
-  client.user.setPresence("🛠️Bot w trakcie prac serwisowych!🛠️");
-});
 client.login(client.config.token);
