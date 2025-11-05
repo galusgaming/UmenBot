@@ -17,20 +17,29 @@ module.exports = {
     const xpToGive = getRandomXp(5, 25);
     const query = { guildID: message.guild.id, userID: message.author.id };
     try {
-      const level = await Level.findOne(query);
-      if (level) {
-        level.xp += xpToGive;
+      const levelDoc = await Level.findOne(query);
+      if (levelDoc) {
+        levelDoc.xp += xpToGive;
 
-        if (level.xp > calculateXpLevel(level.level)) {
-          level.xp = 0;
-          level.level += 1;
-          message.channel.send(
-            `Gratulacje ${message.author}, awansowałeś na poziom ${level.level}`
-          );
+        // Level-up when reaching or exceeding the next level threshold
+        let leveledUp = false;
+        while (levelDoc.xp >= calculateXpLevel(levelDoc.level + 1)) {
+          levelDoc.xp -= calculateXpLevel(levelDoc.level + 1);
+          levelDoc.level += 1;
+          leveledUp = true;
         }
-        await level
+
+        await levelDoc
           .save()
           .catch((error) => console.log(`Error saving level: ${error}`));
+
+        if (leveledUp) {
+          await message.channel
+            .send(
+              `Gratulacje ${message.author}, awansowałeś na poziom ${levelDoc.level}`
+            )
+            .catch(() => {});
+        }
       } else {
         const newLevel = new Level({
           guildID: message.guild.id,
