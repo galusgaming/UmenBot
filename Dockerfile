@@ -1,15 +1,19 @@
 FROM node:18-alpine
 
-# Create app directory
+# Instalacja zależności systemowych potrzebnych dla node-canvas
+RUN apk add --no-cache \
+    build-base \
+    cairo-dev \
+    pango-dev \
+    jpeg-dev \
+    giflib-dev \
+    librsvg-dev
+
 WORKDIR /usr/src/app
 
-# Install dependencies first (better layer caching)
 COPY package*.json ./
+RUN npm ci --omit=dev
 
-# If package-lock.json or yarn.lock exists, it will be used automatically
-RUN npm ci --only=production
-
-# Copy app source
 COPY . .
 
 # Build React client (Vite)
