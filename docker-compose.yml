@@ -7,6 +7,6 @@ services:
     env_file:
       - .env
     volumes:
-      - .:/usr/src/app:ro
+      - .:/usr/src/app
     # no ports exposed; the bot makes outbound connections to Discord
     # If you need to persist database or other files, mount them here
