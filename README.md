@@ -81,6 +81,14 @@ TOKEN=twoj_token_bota_discord
 # użyj jednego z poniższych (preferowane MONGODB_URL)
 MONGODB_URL=mongodb+srv://user:pass@host/dbname
 # MONGODB_URI=mongodb://localhost:27017/umenbot
+
+# Panel WWW (Discord OAuth2)
+SESSION_SECRET=silny_losowy_ciag
+PANEL_PORT=3000
+DISCORD_CLIENT_ID=ID_twojej_aplikacji_Discord
+DISCORD_CLIENT_SECRET=Sekret_twojej_aplikacji_Discord
+# Pełny adres przekierowania ustawiony w Developer Portal
+DISCORD_CALLBACK_URL=http://localhost:3000/auth/callback
 ```
 
 Uwaga: W kodzie bot próbuje połączyć się używając `configs/config.js` (DatabaseURL) albo zmiennych środowiskowych `MONGODB_URL` lub `MONGODB_URI`.
@@ -110,6 +118,60 @@ docker-compose up -d --build
 ```
 
 Bot nie wystawia portów — łączy się wychodząco do API Discorda.
+
+---
+
+## Panel WWW (OAuth2 + React) — konfiguracja XP, role-rewards, blacklisty
+
+Panel jest wbudowany (Express + Discord OAuth2). Działa obok bota w tym samym procesie.
+
+1) Skonfiguruj aplikację na https://discord.com/developers/applications
+	- Utwórz OAuth2 Redirect: `http://localhost:3000/auth/callback` (albo Twój publiczny adres HTTPS)
+	- Skopiuj `CLIENT ID` i `CLIENT SECRET` do `.env`
+	- Zakresy wymagane: `identify`, `guilds`
+2) Uzupełnij zmienne w `.env` (zobacz wyżej). Upewnij się, że `PANEL_PORT` i `DISCORD_CALLBACK_URL` są spójne.
+3) Uruchom bota: panel będzie na `http://localhost:3000` (domyślnie)
+4) Zaloguj się i wybierz serwer, na którym jest bot. Wymagane uprawnienie: właściciel serwera lub `Zarządzanie serwerem`.
+
+W panelu ustawisz:
+- XP rate: mnożnik XP (np. 1.0, 1.5, 2.0)
+- Role-rewards: listę ról przyznawanych po osiągnięciu poziomu (poziom -> ID roli)
+- Blacklisty: ID kanałów/użytkowników/ról, dla których nie będzie naliczany XP ani przyjmowane komendy XP
+ - Blacklisty: ID kanałów/użytkowników/ról, dla których nie będzie naliczany XP
+
+Uwaga: Bot wykorzystuje MongoDB do przechowywania ustawień (`Schemas/settings.js`). Zmiany obowiązują zwykle w ciągu kilkudziesięciu sekund (lekki cache) lub od razu po zapisaniu.
+
+---
+
+### Tryb deweloperski (React + Vite)
+
+Panel to SPA w `web/client` (Vite). Podczas developmentu możesz odpalić serwer API (3000) oraz dev serwer Vite (5173) z proxy:
+
+1) Uruchom backend (w pierwszym terminalu):
+
+```powershell
+npm start
+```
+
+2) Uruchom frontend (w drugim terminalu):
+
+```powershell
+cd web/client
+npm install
+npm run dev
+```
+
+Otwórz adres pokazany przez Vite (domyślnie `http://localhost:5173`). Proxy przekieruje `/api`, `/login`, `/logout`, `/auth` do backendu na porcie 3000.
+
+### Produkcja (Docker)
+
+Obraz Dockera buduje front automatcznie (Vite build) i serwuje go z Expressa pod portem 3000:
+
+```powershell
+docker-compose up -d --build
+```
+
+Panel będzie dostępny na `http://localhost:3000`.
 
 ---
 

@@ -3,7 +3,6 @@ const levelSchema = new Schema({
   userID: {
     type: String,
     required: true,
-    unique: true,
   },
   guildID: {
     type: String,
@@ -12,11 +11,16 @@ const levelSchema = new Schema({
   xp: {
     type: Number,
     default: 0,
+    min: 0,
   },
   level: {
     type: Number,
     default: 0,
+    min: 0,
   },
 });
+
+// Ensure one document per user per guild
+levelSchema.index({ guildID: 1, userID: 1 }, { unique: true });
 
 module.exports = model("level", levelSchema);

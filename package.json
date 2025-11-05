@@ -4,7 +4,10 @@
   "description": "`Projekt bota na discord.js v14 `",
   "main": "index.js",
   "scripts": {
-    "test": "node ./src/index.js"
+    "start": "node index.js",
+    "test": "node ./src/index.js",
+    "panel:dev": "npm run dev --prefix web/client",
+    "panel:build": "npm run build --prefix web/client"
   },
   "repository": {
     "type": "git",
@@ -22,10 +25,15 @@
     "ascii-tables": "^0.0.1",
     "canvas": "^2.11.2",
     "chalk": "^4.1.0",
+    "connect-mongo": "^5.1.0",
     "discord.js": "^14.15.3",
     "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "express-session": "^1.18.1",
     "glob": "^10.3.0",
     "mongoose": "^7.7.0",
+    "passport": "^0.7.0",
+    "passport-discord": "^0.1.4",
     "path": "^0.12.7",
     "pretty-ms": "^9.0.0",
     "punycode": "^2.3.1",

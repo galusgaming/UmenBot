@@ -12,12 +12,18 @@ RUN npm ci --only=production
 # Copy app source
 COPY . .
 
+# Build React client (Vite)
+RUN npm ci --prefix web/client \
+	&& npm run build --prefix web/client
+
 # Create non-root user
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 RUN chown -R appuser:appgroup /usr/src/app
 
 USER appuser
 
-# The bot doesn't listen on a port; it connects out to Discord. Use CMD to start.
-# The repository's package.json doesn't define a start script; run node index.js by default.
+# Panel WWW (Express) domyślnie nasłuchuje na porcie 3000
+EXPOSE 3000
+
+# Start bota (i panelu)
 CMD ["node", "index.js"]

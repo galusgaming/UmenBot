@@ -22,6 +22,7 @@ const { loadEvents } = require("./handlers/eventHandler");
 const { loadCommands } = require("./handlers/commandHandler");
 const mongoose = require("mongoose");
 const chalk = require("chalk");
+const { initWeb } = require("./web/server");
 client.config = require("./configs/config.js");
 client.events = new Collection();
 client.commands = new Collection();
@@ -38,6 +39,12 @@ client.commands = new Collection();
     console.log(chalk.green("Połączono z bazą danych MongoDB"));
 
     loadEvents(client);
+    // Start web panel (Express + OAuth2)
+    try {
+      initWeb(client);
+    } catch (e) {
+      console.log(chalk.red("Nie udało się uruchomić panelu www"), e);
+    }
   } catch (error) {
     console.log(chalk.red("Nie udało się połączyć z bazą danych MongoDB"));
   }
