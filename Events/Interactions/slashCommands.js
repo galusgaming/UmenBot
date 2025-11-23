@@ -8,7 +8,7 @@ module.exports = {
    * @param {ChatInputCommandInteraction} interaction
    *
    */
-  execute(interaction, client) {
+  async execute(interaction, client) {
     try {
       if (!interaction.isChatInputCommand()) return;
 
@@ -19,12 +19,17 @@ module.exports = {
           ephemeral: true,
         });
       if (command.developer && interaction.user.id !== "465932200123301928")
-        return interaction({
-          content: "Ta Komenda jest dostępna wyłącznie dla twórcy bota",
+        return interaction.reply({
+          content: "Ta komenda jest dostępna wyłącznie dla twórcy bota.",
+          ephemeral: true,
         });
-      command.execute(interaction, client);
+      await command.execute(interaction, client);
     } catch (error) {
       console.log(error);
+      if (interaction.deferred || interaction.replied) {
+        try { await interaction.followUp({ content: "There was an error while executing this command", ephemeral: true }); } catch {}
+        return;
+      }
       return interaction.reply({
         content: "There was an error while executing this command",
         ephemeral: true,
