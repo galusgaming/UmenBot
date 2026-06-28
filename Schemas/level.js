@@ -3,7 +3,6 @@ const levelSchema = new Schema({
   userID: {
     type: String,
     required: true,
-    unique: true,
   },
   guildID: {
     type: String,
@@ -18,5 +17,8 @@ const levelSchema = new Schema({
     default: 0,
   },
 });
+
+// Unikalny indeks na kombinację guildID + userID, pozwala na oddzielne profile per serwer
+levelSchema.index({ guildID: 1, userID: 1 }, { unique: true });
 
 module.exports = model("level", levelSchema);

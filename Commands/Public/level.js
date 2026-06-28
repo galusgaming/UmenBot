@@ -25,12 +25,18 @@ module.exports = {
       userID: interaction.user.id,
     };
 
-    const userLevel = await Level.findOne(query);
+    let userLevel = await Level.findOne(query);
     if (!userLevel) {
-      return interaction.reply({
-        content: "Nie znaleziono twojego poziomu",
-        ephemeral: true,
-      });
+      // jeśli nie ma wpisu, utwórz domyślny rekord (pozwala to od razu pokazać kartę poziomu)
+      try {
+        userLevel = await Level.create({ ...query, xp: 0, level: 0 });
+      } catch (e) {
+        console.error("[level] Błąd tworzenia rekordu poziomu:", e);
+        return interaction.reply({
+          content: "Nie znaleziono twojego poziomu",
+          ephemeral: true,
+        });
+      }
     }
 
     const canvas = CanvasLib.createCanvas(700, 250);
