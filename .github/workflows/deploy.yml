@@ -15,7 +15,7 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
             git config --global --add safe.directory ${{ vars.SERVER_SSH_PATH }}
-            sudo cd ${{ vars.SERVER_SSH_PATH }}
+            cd ${{ vars.SERVER_SSH_PATH }}
             sudo git pull origin main
             docker compose down
             docker compose up -d --build
