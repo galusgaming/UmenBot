@@ -16,7 +16,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
-            cd ${{ variables.SERVER_SSH_PATH }}
+            cd ${{ vars.SERVER_SSH_PATH }}
             git pull origin main
             docker compose down
             docker compose up -d --build
