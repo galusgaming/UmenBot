@@ -7,13 +7,13 @@ const {
   const Tenor = require("tenorjs").client({
     Key: "AIzaSyCfKMT6FuUqriZFPxDlm8R7tJtWWWRGTpM", // https://developers.google.com/tenor/guides/quickstart
     Filter: "off", // "off", "low", "medium", "high", not case sensitive
-    Locale: "en_US", // Your locale here, case-sensitivity depends on input
+    Locale: "pl_PL", // Your locale here, case-sensitivity depends on input
     MediaFilter: "minimal", // either minimal or basic, not case sensitive
     DateFormat: "D/MM/YYYY - H:mm:ss A", // Change this accordingly
   });
   module.exports = {
     data: new SlashCommandBuilder()
-      .setName("kotami")
+      .setName("koty")
       .setDescription("Wysyła losowego GIFa z kotami"),
   
     /**

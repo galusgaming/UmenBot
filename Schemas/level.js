@@ -11,16 +11,14 @@ const levelSchema = new Schema({
   xp: {
     type: Number,
     default: 0,
-    min: 0,
   },
   level: {
     type: Number,
     default: 0,
-    min: 0,
   },
 });
 
-// Ensure one document per user per guild
+// Unikalny indeks na kombinację guildID + userID, pozwala na oddzielne profile per serwer
 levelSchema.index({ guildID: 1, userID: 1 }, { unique: true });
 
 module.exports = model("level", levelSchema);
