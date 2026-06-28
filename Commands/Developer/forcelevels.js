@@ -36,7 +36,7 @@ module.exports = {
         continue;
       }
       totalMembers++;
-      const query = { guildID: interaction.guild.id, userID: member.user.id };
+      const query = { guildID: String(interaction.guild.id), userID: String(member.user.id) };
       try {
         const exists = await Level.findOne(query);
         if (!exists) {

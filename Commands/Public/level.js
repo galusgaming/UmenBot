@@ -21,8 +21,8 @@ module.exports = {
     const Level = require("../../Schemas/level");
 
     const query = {
-      guildID: interaction.guild.id,
-      userID: interaction.user.id,
+      guildID: String(interaction.guild.id),
+      userID: String(interaction.user.id),
     };
 
     let userLevel = await Level.findOne(query);

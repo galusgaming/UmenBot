@@ -77,7 +77,7 @@ module.exports = {
     const baseXp = getRandomXp(5, 25);
     const rate = Math.max(0, Number(settings?.xpRate) || 1);
     const xpToGive = Math.floor(baseXp * rate);
-    const query = { guildID: message.guild.id, userID: message.author.id };
+    const query = { guildID: String(message.guild.id), userID: String(message.author.id) };
     try {
       const levelDoc = await Level.findOne(query);
       if (levelDoc) {
