@@ -56,7 +56,7 @@ Autor: GalusGaming (Discord: `galusgaming4096`)
 npm install
 ```
 
-2) Utwórz plik `.env` w katalogu głównym repozytorium (patrz sekcja Konfiguracja)
+2) Skopiuj `.env.example` do `.env` i uzupełnij wartości
 
 3) Uruchom bota (dev):
 
@@ -74,12 +74,13 @@ nodemon ./index.js
 
 ## Konfiguracja (.env)
 
-Bot korzysta z `dotenv`. W katalogu głównym utwórz plik `.env` z kluczami:
+Bot korzysta z `dotenv`. W katalogu głównym przygotuj plik `.env` na bazie `.env.example`:
 
 ```dotenv
 TOKEN=twoj_token_bota_discord
-# użyj jednego z poniższych (preferowane MONGODB_URL)
+TENOR_API_KEY=twoj_klucz_api_tenor
 MONGODB_URL=mongodb+srv://user:pass@host/dbname
+# albo:
 # MONGODB_URI=mongodb://localhost:27017/umenbot
 
 # Panel WWW (Discord OAuth2)
@@ -87,11 +88,10 @@ SESSION_SECRET=silny_losowy_ciag
 PANEL_PORT=3000
 DISCORD_CLIENT_ID=ID_twojej_aplikacji_Discord
 DISCORD_CLIENT_SECRET=Sekret_twojej_aplikacji_Discord
-# Pełny adres przekierowania ustawiony w Developer Portal
 DISCORD_CALLBACK_URL=http://localhost:3000/auth/callback
 ```
 
-Uwaga: W kodzie bot próbuje połączyć się używając `configs/config.js` (DatabaseURL) albo zmiennych środowiskowych `MONGODB_URL` lub `MONGODB_URI`.
+Uwaga: W kodzie bot próbuje połączyć się używając `configs/config.js` (DatabaseURL) albo zmiennych środowiskowych `MONGODB_URL` lub `MONGODB_URI`. Komendy GIF używają `TENOR_API_KEY` z `.env`.
 
 ---
 
@@ -105,7 +105,7 @@ Instrukcje (Windows PowerShell):
 docker build -t umenbot:latest .
 ```
 
-- Uruchom kontener (wymagany plik `.env` z `TOKEN` i `MONGODB_URL`/`MONGODB_URI`):
+- Uruchom kontener (wymagany plik `.env` z `TOKEN`, `TENOR_API_KEY` i `MONGODB_URL`/`MONGODB_URI`):
 
 ```powershell
 docker run -d --name umenbot --env-file .env umenbot:latest

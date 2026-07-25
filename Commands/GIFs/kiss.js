@@ -4,17 +4,11 @@ const {
     Client,
     EmbedBuilder,
   } = require("discord.js");
-  const Tenor = require("tenorjs").client({
-    Key: "AIzaSyCfKMT6FuUqriZFPxDlm8R7tJtWWWRGTpM", // https://developers.google.com/tenor/guides/quickstart
-    Filter: "medium", // "off", "low", "medium", "high", not case sensitive
-    Locale: "en_US", // Your locale here, case-sensitivity depends on input
-    MediaFilter: "minimal", // either minimal or basic, not case sensitive
-    DateFormat: "D/MM/YYYY - H:mm:ss A", // Change this accordingly
-  });
+  const { getRandomGifUrl } = require("../../Function/tenorGif");
   module.exports = {
     data: new SlashCommandBuilder()
       .setName("kiss")
-      .setDescription("Wysyła wybranemu użytkownikowi losowego GIFa z pocałunkiem`").addUserOption(
+      .setDescription("Wysyła wybranemu użytkownikowi losowego GIFa z pocałunkiem").addUserOption(
         option => option.setName('target').setDescription('Użytkownik, któremu chcesz wysłać pocałunek').setRequired(true)
       ),
   
@@ -25,22 +19,29 @@ const {
      */
   
     async execute(interaction, client) {
+        try {
         await interaction.deferReply();
-        Tenor.Search.Random("kiss", "1")
-        .then((Results) => {
-          Results.forEach((Post) => {
-            const gif = new EmbedBuilder()
-              .setColor(0x3399ff)
-              .setDescription(`${interaction.user} przesyła buziaki ${interaction.options.getUser('target')}`)
-              .setImage(`${Post.media_formats.gif.url}`)
-              .setFooter({
-                text:`Requested by ${interaction.user.tag}`,
-                iconURL: interaction.user.displayAvatarURL(),
-            });
-            
-            interaction.editReply({ embeds: [gif] });
+        const gifUrl = await getRandomGifUrl("kiss", {
+          Filter: "medium",
+          Locale: "en_US",
         });
-        });
+
+        const gif = new EmbedBuilder()
+          .setColor(0x3399ff)
+          .setDescription(`${interaction.user} przesyła buziaki ${interaction.options.getUser('target')}`)
+          .setImage(gifUrl)
+          .setFooter({
+            text: `Requested by ${interaction.user.tag}`,
+            iconURL: interaction.user.displayAvatarURL(),
+          });
+
+        await interaction.editReply({ embeds: [gif] });
+        } catch (error) {
+          console.error(error);
+          if (interaction.deferred || interaction.replied) {
+            await interaction.editReply("Nie udało się pobrać GIFa. Spróbuj ponownie później.");
+          }
+        }
     },
   };
   

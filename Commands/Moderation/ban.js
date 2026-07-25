@@ -5,13 +5,7 @@ const {
   EmbedBuilder,
   PermissionFlagsBits,
 } = require("discord.js");
-const Tenor = require("tenorjs").client({
-  Key: "AIzaSyCfKMT6FuUqriZFPxDlm8R7tJtWWWRGTpM", // https://developers.google.com/tenor/guides/quickstart
-  Filter: "off", // "off", "low", "medium", "high", not case sensitive
-  Locale: "en_US", // Your locale here, case-sensitivity depends on input
-  MediaFilter: "minimal", // either minimal or basic, not case sensitive
-  DateFormat: "D/MM/YYYY - H:mm:ss A", // Change this accordingly
-});
+const { getRandomGifUrl } = require("../../Function/tenorGif");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("ban")
@@ -65,32 +59,36 @@ module.exports = {
     try {
       await interaction.guild.members.ban(target, { reason: reason });
 
-      Tenor.Search.Random("ban", "1")
-        .then((Results) => {
-          Results.forEach((Post) => {
-            const embed = new EmbedBuilder()
+      try {
+        const gifUrl = await getRandomGifUrl("ban", {
+          Locale: "en_US",
+        });
 
-              .setTitle("Ktoś właśnie Odleciał")
-              .setColor(0x3399ff)
-              .setThumbnail(`${target.displayAvatarURL()}`)
-              .setImage(`${Post.media_formats.gif.url}`)
-              .addFields(
-                {
-                  name: "Zbanowany",
-                  value: `${target}`,
-                  inline: true,
-                },
-                {
-                  name: "Powód",
-                  value: `${reason}`,
-                  inline: true,
-                }
-              );
+        const embed = new EmbedBuilder()
+          .setTitle("Ktoś właśnie Odleciał")
+          .setColor(0x3399ff)
+          .setThumbnail(`${target.displayAvatarURL()}`)
+          .setImage(gifUrl)
+          .addFields(
+            {
+              name: "Zbanowany",
+              value: `${target}`,
+              inline: true,
+            },
+            {
+              name: "Powód",
+              value: `${reason}`,
+              inline: true,
+            }
+          );
 
-            interaction.editReply({ embeds: [embed] });
-          });
-        })
-        .catch(console.error);
+        await interaction.editReply({ embeds: [embed] });
+      } catch (gifError) {
+        console.error(gifError);
+        await interaction.editReply(
+          `Użytkownik został zbanowany. Powód: ${reason}`
+        );
+      }
     } catch (error) {
       console.error(error);
       await interaction.editReply(

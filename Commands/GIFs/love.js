@@ -4,17 +4,11 @@ const {
     Client,
     EmbedBuilder,
   } = require("discord.js");
-  const Tenor = require("tenorjs").client({
-    Key: "AIzaSyCfKMT6FuUqriZFPxDlm8R7tJtWWWRGTpM", // https://developers.google.com/tenor/guides/quickstart
-    Filter: "off", // "off", "low", "medium", "high", not case sensitive
-    Locale: "en_US", // Your locale here, case-sensitivity depends on input
-    MediaFilter: "minimal", // either minimal or basic, not case sensitive
-    DateFormat: "D/MM/YYYY - H:mm:ss A", // Change this accordingly
-  });
+  const { getRandomGifUrl } = require("../../Function/tenorGif");
   module.exports = {
     data: new SlashCommandBuilder()
       .setName("love")
-      .setDescription("Wysyła losowego GIFa z miłości`"),
+      .setDescription("Wysyła losowego GIFa z miłości"),
   
     /**
      *
@@ -23,21 +17,27 @@ const {
      */
   
     async execute(interaction, client) {
+        try {
         await interaction.deferReply();
-        Tenor.Search.Random("love", "1")
-        .then((Results) => {
-          Results.forEach((Post) => {
-            const gif = new EmbedBuilder()
-              .setColor(0x3399ff)
-              .setImage(`${Post.media_formats.gif.url}`)
-              .setFooter({
-                text:`Requested by ${interaction.user.tag}`,
-                iconURL: interaction.user.displayAvatarURL(),
-            });
-            
-            interaction.editReply({ embeds: [gif] });
+        const gifUrl = await getRandomGifUrl("love", {
+          Locale: "en_US",
         });
-        });
+
+        const gif = new EmbedBuilder()
+          .setColor(0x3399ff)
+          .setImage(gifUrl)
+          .setFooter({
+            text: `Requested by ${interaction.user.tag}`,
+            iconURL: interaction.user.displayAvatarURL(),
+          });
+
+        await interaction.editReply({ embeds: [gif] });
+        } catch (error) {
+          console.error(error);
+          if (interaction.deferred || interaction.replied) {
+            await interaction.editReply("Nie udało się pobrać GIFa. Spróbuj ponownie później.");
+          }
+        }
     },
   };
   
