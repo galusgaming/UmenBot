@@ -78,7 +78,6 @@ Bot korzysta z `dotenv`. W katalogu głównym przygotuj plik `.env` na bazie `.e
 
 ```dotenv
 TOKEN=twoj_token_bota_discord
-TENOR_API_KEY=twoj_klucz_api_tenor
 MONGODB_URL=mongodb+srv://user:pass@host/dbname
 # albo:
 # MONGODB_URI=mongodb://localhost:27017/umenbot
@@ -91,7 +90,7 @@ DISCORD_CLIENT_SECRET=Sekret_twojej_aplikacji_Discord
 DISCORD_CALLBACK_URL=http://localhost:3000/auth/callback
 ```
 
-Uwaga: W kodzie bot próbuje połączyć się używając `configs/config.js` (DatabaseURL) albo zmiennych środowiskowych `MONGODB_URL` lub `MONGODB_URI`. Komendy GIF używają `TENOR_API_KEY` z `.env`.
+Uwaga: W kodzie bot próbuje połączyć się używając `configs/config.js` (DatabaseURL) albo zmiennych środowiskowych `MONGODB_URL` lub `MONGODB_URI`. Komendy GIF korzystają teraz z publicznej strony wyszukiwania Tenora, więc nie wymagają już `TENOR_API_KEY`.
 
 ---
 

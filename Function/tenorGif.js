@@ -1,41 +1,60 @@
 const DEFAULT_TENOR_OPTIONS = {
-  filter: "off",
   locale: "en_US",
-  mediaFilter: "gif",
 };
 
-async function getRandomGifUrl(query, options = {}) {
-  const apiKey = process.env.TENOR_API_KEY;
+function extractStoreCache(html) {
+  const match = html.match(/<script id="store-cache"[^>]*>([\s\S]*?)<\/script>/i);
 
-  if (!apiKey) {
-    throw new Error("Brakuje zmiennej TENOR_API_KEY w pliku .env");
+  if (!match) {
+    throw new Error("Nie udało się odczytać danych strony Tenor.");
   }
 
-  const searchParams = new URLSearchParams({
-    key: apiKey,
-    q: query,
-    limit: "1",
-    random: "true",
-    contentfilter: options.Filter || DEFAULT_TENOR_OPTIONS.filter,
-    locale: options.Locale || DEFAULT_TENOR_OPTIONS.locale,
-    media_filter: options.MediaFilter || DEFAULT_TENOR_OPTIONS.mediaFilter,
+  return JSON.parse(match[1]);
+}
+
+function pickGifUrl(post) {
+  return (
+    post?.media_formats?.gif?.url ||
+    post?.media_formats?.mediumgif?.url ||
+    post?.media_formats?.tinygif?.url ||
+    post?.media_formats?.webp?.url ||
+    null
+  );
+}
+
+async function getRandomGifUrl(query, options = {}) {
+  const searchUrl = `https://tenor.com/search/${encodeURIComponent(query)}-gifs`;
+  const response = await fetch(searchUrl, {
+    headers: {
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+      "accept-language": options.Locale || DEFAULT_TENOR_OPTIONS.locale,
+    },
   });
 
-  const response = await fetch(`https://tenor.googleapis.com/v2/search?${searchParams.toString()}`);
-
   if (!response.ok) {
-    throw new Error(`Tenor API zwróciło błąd ${response.status}`);
+    throw new Error(`Tenor zwrócił błąd ${response.status}`);
   }
 
-  const data = await response.json();
-  const post = data?.results?.[0];
-  const gifUrl = post?.media_formats?.gif?.url;
+  const html = await response.text();
+  const storeCache = extractStoreCache(html);
+  const searchBuckets = Object.values(storeCache?.universal?.search || {});
+  const results = searchBuckets.flatMap((bucket) => (Array.isArray(bucket?.results) ? bucket.results : []));
 
-  if (!gifUrl) {
+  if (!results.length) {
     throw new Error(`Nie udało się pobrać GIFa dla zapytania: ${query}`);
   }
 
-  return gifUrl;
+  const shuffledResults = results.sort(() => Math.random() - 0.5);
+
+  for (const post of shuffledResults) {
+    const gifUrl = pickGifUrl(post);
+
+    if (gifUrl) {
+      return gifUrl;
+    }
+  }
+
+  throw new Error(`Nie udało się pobrać GIFa dla zapytania: ${query}`);
 }
 
 module.exports = {
