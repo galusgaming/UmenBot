@@ -1,30 +1,34 @@
-const { client } = require("tenorjs");
-
 const DEFAULT_TENOR_OPTIONS = {
-  Filter: "off",
-  Locale: "en_US",
-  MediaFilter: "minimal",
-  DateFormat: "D/MM/YYYY - H:mm:ss A",
+  filter: "off",
+  locale: "en_US",
+  mediaFilter: "gif",
 };
 
-function getTenorClient(options = {}) {
+async function getRandomGifUrl(query, options = {}) {
   const apiKey = process.env.TENOR_API_KEY;
 
   if (!apiKey) {
     throw new Error("Brakuje zmiennej TENOR_API_KEY w pliku .env");
   }
 
-  return client({
-    Key: apiKey,
-    ...DEFAULT_TENOR_OPTIONS,
-    ...options,
+  const searchParams = new URLSearchParams({
+    key: apiKey,
+    q: query,
+    limit: "1",
+    random: "true",
+    contentfilter: options.Filter || DEFAULT_TENOR_OPTIONS.filter,
+    locale: options.Locale || DEFAULT_TENOR_OPTIONS.locale,
+    media_filter: options.MediaFilter || DEFAULT_TENOR_OPTIONS.mediaFilter,
   });
-}
 
-async function getRandomGifUrl(query, options = {}) {
-  const tenor = getTenorClient(options);
-  const results = await tenor.Search.Random(query, "1");
-  const post = Array.isArray(results) ? results[0] : results?.[0];
+  const response = await fetch(`https://tenor.googleapis.com/v2/search?${searchParams.toString()}`);
+
+  if (!response.ok) {
+    throw new Error(`Tenor API zwróciło błąd ${response.status}`);
+  }
+
+  const data = await response.json();
+  const post = data?.results?.[0];
   const gifUrl = post?.media_formats?.gif?.url;
 
   if (!gifUrl) {
