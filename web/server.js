@@ -97,6 +97,19 @@ function initWeb(client) {
   // API (SPA)
   const api = express.Router();
 
+  // Public info for the landing page — no auth required, no sensitive data.
+  const INVITE_PERMISSIONS = "1099780090886"; // view/send/embed, manage messages, kick, ban, manage roles, timeout
+  api.get("/public-info", (req, res) => {
+    const clientId = process.env.DISCORD_CLIENT_ID;
+    res.json({
+      guildCount: client.guilds.cache.size,
+      version: require("../package.json").version,
+      inviteUrl: clientId
+        ? `https://discord.com/oauth2/authorize?client_id=${clientId}&permissions=${INVITE_PERMISSIONS}&scope=bot%20applications.commands`
+        : null,
+    });
+  });
+
   api.get("/me", ensureApiAuth, (req, res) => {
     res.json({
       user: req.user,

@@ -1,53 +1,65 @@
-const DEFAULT_TENOR_OPTIONS = {
-  locale: "en_US",
+const DEFAULT_USER_AGENT = "UmenBot/1.0 (https://github.com/galusgaming/UmenBot)";
+
+const REACTION_ENDPOINTS = {
+  ban: ["slap", "bonk", "kick"],
+  kiss: ["kiss"],
+  love: ["hug", "cuddle", "blowkiss"],
 };
 
-function extractStoreCache(html) {
-  const match = html.match(/<script id="store-cache"[^>]*>([\s\S]*?)<\/script>/i);
+const ANIMAL_IMAGE_ENDPOINTS = {
+  dog: "dog",
+  cat: "cat",
+};
 
-  if (!match) {
-    throw new Error("Nie udało się odczytać danych strony Tenor.");
-  }
-
-  return JSON.parse(match[1]);
+function buildHeaders(extraHeaders = {}) {
+  return {
+    "user-agent": DEFAULT_USER_AGENT,
+    ...extraHeaders,
+  };
 }
 
-function pickGifUrl(post) {
-  return (
-    post?.media_formats?.gif?.url ||
-    post?.media_formats?.mediumgif?.url ||
-    post?.media_formats?.tinygif?.url ||
-    post?.media_formats?.webp?.url ||
-    null
-  );
-}
-
-async function getRandomGifUrl(query, options = {}) {
-  const searchUrl = `https://tenor.com/search/${encodeURIComponent(query)}-gifs`;
-  const response = await fetch(searchUrl, {
-    headers: {
-      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
-      "accept-language": options.Locale || DEFAULT_TENOR_OPTIONS.locale,
-    },
+async function fetchJson(url) {
+  const response = await fetch(url, {
+    headers: buildHeaders(),
   });
 
   if (!response.ok) {
-    throw new Error(`Tenor zwrócił błąd ${response.status}`);
+    throw new Error(`API zwróciło błąd ${response.status}`);
   }
 
-  const html = await response.text();
-  const storeCache = extractStoreCache(html);
-  const searchBuckets = Object.values(storeCache?.universal?.search || {});
-  const results = searchBuckets.flatMap((bucket) => (Array.isArray(bucket?.results) ? bucket.results : []));
+  return response.json();
+}
 
-  if (!results.length) {
-    throw new Error(`Nie udało się pobrać GIFa dla zapytania: ${query}`);
+async function getAnimalImageUrl(query) {
+  if (query === "frog") {
+    const response = await fetch("https://loremflickr.com/640/480/frog", {
+      headers: buildHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error(`API zwróciło błąd ${response.status}`);
+    }
+
+    return response.url;
   }
 
-  const shuffledResults = results.sort(() => Math.random() - 0.5);
+  const endpoint = ANIMAL_IMAGE_ENDPOINTS[query] || query;
+  const data = await fetchJson(`https://some-random-api.com/img/${encodeURIComponent(endpoint)}`);
+  const imageUrl = data?.link;
 
-  for (const post of shuffledResults) {
-    const gifUrl = pickGifUrl(post);
+  if (!imageUrl) {
+    throw new Error(`Nie udało się pobrać obrazka dla zapytania: ${query}`);
+  }
+
+  return imageUrl;
+}
+
+async function getReactionGifUrl(query) {
+  const candidates = REACTION_ENDPOINTS[query] || [query];
+
+  for (const endpoint of candidates) {
+    const data = await fetchJson(`https://nekos.best/api/v2/${encodeURIComponent(endpoint)}`);
+    const gifUrl = data?.results?.[0]?.url;
 
     if (gifUrl) {
       return gifUrl;
@@ -55,6 +67,16 @@ async function getRandomGifUrl(query, options = {}) {
   }
 
   throw new Error(`Nie udało się pobrać GIFa dla zapytania: ${query}`);
+}
+
+async function getRandomGifUrl(query) {
+  const normalizedQuery = String(query).trim().toLowerCase();
+
+  if (normalizedQuery === "frog" || Object.prototype.hasOwnProperty.call(ANIMAL_IMAGE_ENDPOINTS, normalizedQuery)) {
+    return getAnimalImageUrl(normalizedQuery);
+  }
+
+  return getReactionGifUrl(normalizedQuery);
 }
 
 module.exports = {

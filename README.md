@@ -90,7 +90,7 @@ DISCORD_CLIENT_SECRET=Sekret_twojej_aplikacji_Discord
 DISCORD_CALLBACK_URL=http://localhost:3000/auth/callback
 ```
 
-Uwaga: W kodzie bot próbuje połączyć się używając `configs/config.js` (DatabaseURL) albo zmiennych środowiskowych `MONGODB_URL` lub `MONGODB_URI`. Komendy GIF korzystają teraz z publicznej strony wyszukiwania Tenora, więc nie wymagają już `TENOR_API_KEY`.
+Uwaga: W kodzie bot próbuje połączyć się używając `configs/config.js` (DatabaseURL) albo zmiennych środowiskowych `MONGODB_URL` lub `MONGODB_URI`. Komendy GIF korzystają teraz z publicznych API i nie wymagają już `TENOR_API_KEY`.
 
 ---
 
