@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useMe, usePublicInfo } from '../lib/api'
 import TariffLadder from '../components/TariffLadder'
 
-const HERO_LADDER = [
+const WARN_LADDER = [
   { label: '5 warnów', sub: 'ban', active: false },
   { label: '3 warny', sub: 'timeout 1h', active: true },
   { label: '1 warn', sub: 'zapisany', active: false },
@@ -17,36 +17,38 @@ const XP_LADDER = [
 
 const FEATURES = [
   {
-    title: 'Taryfikator ostrzeżeń',
-    body: 'Progi warnów z automatyczną akcją — timeout, kick albo ban. Ty ustawiasz zasady raz, bot pilnuje ich zawsze.',
+    title: 'Moderacja, która się nie spóźnia',
+    body: 'Ustawiasz progi ostrzeżeń raz — bot pilnuje ich o każdej porze dnia i nocy, bez Ciebie.',
   },
   {
-    title: 'Poziomy i XP',
-    body: 'Aktywność na serwerze przekłada się na poziomy i role-nagrody, konfigurowalne z panelu.',
+    title: 'Tickety bez zalewania DM-ów',
+    body: 'Użytkownik klika przycisk, dostaje prywatny kanał, staff widzi wszystko w jednym miejscu.',
   },
   {
-    title: 'Panel WWW',
-    body: 'Logowanie przez Discord OAuth2. Zarządzasz XP, nagrodami i blacklistami bez grzebania w bazie.',
+    title: 'Ludzie wracają po XP',
+    body: 'Poziomy i role-nagrody za aktywność — mały bodziec, żeby serwer żył, nie tylko istniał.',
   },
   {
-    title: 'Lekki i modularny',
-    body: 'discord.js v14, czytelna struktura komend i zdarzeń — łatwo dodać własną funkcję.',
-  },
-  {
-    title: 'Docker-ready',
-    body: 'Jeden `docker-compose up` uruchamia bota razem z panelem. Bez otwierania portów wychodzących.',
-  },
-  {
-    title: 'MongoDB',
-    body: 'Ustawienia serwera, warny i poziomy trzymane w Mongo — działa z Atlas albo własnym serwerem.',
+    title: 'Wszystko z jednego panelu',
+    body: 'Logujesz się przez Discord i zarządzasz botem z przeglądarki — zero grzebania w bazie.',
   },
 ]
+
+const LEADERBOARD_PREVIEW = [
+  { rank: 1, name: 'kubix_pl', level: 34 },
+  { rank: 2, name: 'weronika.exe', level: 29 },
+  { rank: 3, name: 'stary_wilk', level: 27 },
+]
+
+const ECONOMY_PLANNED = ['/work', '/daily', '/shop', '/rob', '/coinflip', '/transfer']
 
 const PUBLIC_COMMANDS = [
   ['/ping', 'sprawdza opóźnienie'],
   ['/help', 'lista komend i pomoc'],
   ['/info', 'informacje o bocie/serwerze'],
   ['/level', 'poziom użytkownika'],
+  ['/leaderboard', 'ranking aktywności'],
+  ['/ticket', 'otwiera prywatny ticket'],
 ]
 
 const MOD_COMMANDS = [
@@ -63,7 +65,8 @@ function Nav({ user, loading }) {
         <span className="l-logo">Umen<span style={{ color: 'var(--accent)' }}>Bot</span></span>
         <nav className="l-nav-links">
           <a href="#funkcje">Funkcje</a>
-          <a href="#taryfikator">Taryfikator</a>
+          <a href="#tickety">Tickety</a>
+          <a href="#ranking">Ranking</a>
           <a href="#komendy">Komendy</a>
         </nav>
         <div className="l-nav-cta">
@@ -103,7 +106,6 @@ export default function Landing() {
         .l-stats { display: flex; gap: 2rem; font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-dim); }
         .l-stats b { color: var(--text); font-size: 0.95rem; }
 
-        .l-hero-visual { }
         .l-hero-visual-label { font-size: 0.78rem; color: var(--text-dim); font-family: var(--font-mono); margin-bottom: 0.6rem; }
 
         .l-section { max-width: 1080px; margin: 0 auto; padding: 4rem 1.5rem; border-top: 1px solid var(--border); }
@@ -112,7 +114,7 @@ export default function Landing() {
         .l-h2 { font-family: var(--font-display); font-size: 1.9rem; font-weight: 600; margin: 0.5rem 0 0.75rem; }
         .l-p { color: var(--text-muted); max-width: 60ch; line-height: 1.6; }
 
-        .l-features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+        .l-features { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
         .l-feature { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.4rem; }
         .l-feature h3 { font-family: var(--font-display); font-size: 1rem; margin: 0 0 0.5rem; font-weight: 600; }
         .l-feature p { color: var(--text-muted); font-size: 0.9rem; line-height: 1.55; margin: 0; }
@@ -120,6 +122,27 @@ export default function Landing() {
         .l-tariff { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: start; }
         .l-tariff-example { font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-muted); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1rem; margin-top: 1.25rem; }
         .l-tariff-example div { margin: 0.2rem 0; }
+
+        .l-ticket-flow { display: flex; gap: 0; align-items: stretch; }
+        .l-ticket-step { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; position: relative; }
+        .l-ticket-step + .l-ticket-step { margin-left: 1rem; }
+        .l-ticket-num { font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent); margin-bottom: 0.5rem; }
+        .l-ticket-step h4 { font-family: var(--font-display); font-size: 0.95rem; margin: 0 0 0.4rem; font-weight: 600; }
+        .l-ticket-step p { color: var(--text-muted); font-size: 0.85rem; margin: 0; line-height: 1.5; }
+
+        .l-lb { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center; }
+        .l-lb-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+        .l-lb-row { display: flex; align-items: center; gap: 12px; padding: 0.85rem 1.1rem; border-bottom: 1px solid var(--border); }
+        .l-lb-row:last-child { border-bottom: none; }
+        .l-lb-rank { font-family: var(--font-mono); color: var(--tier-2); width: 20px; }
+        .l-lb-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--surface-2); }
+        .l-lb-name { flex: 1; font-size: 0.88rem; }
+        .l-lb-level { font-family: var(--font-mono); font-size: 0.8rem; color: var(--accent); }
+
+        .l-economy { background: var(--surface); border: 1px dashed var(--border-strong); border-radius: var(--radius); padding: 1.75rem; display: flex; justify-content: space-between; align-items: center; gap: 2rem; flex-wrap: wrap; }
+        .l-economy-cmds { display: flex; gap: 8px; flex-wrap: wrap; }
+        .l-economy-cmds code { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted); border: 1px solid var(--border-strong); padding: 0.25rem 0.55rem; border-radius: 6px; }
+        .l-soon-badge { font-family: var(--font-mono); font-size: 0.72rem; color: var(--tier-2); border: 1px solid var(--tier-2); padding: 0.25rem 0.6rem; border-radius: 999px; white-space: nowrap; }
 
         .l-commands { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
         .l-cmd-group h4 { font-family: var(--font-mono); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); margin-bottom: 1rem; }
@@ -137,7 +160,9 @@ export default function Landing() {
         @media (max-width: 860px) {
           .l-hero { grid-template-columns: 1fr; padding-top: 3rem; }
           .l-features { grid-template-columns: 1fr 1fr; }
-          .l-tariff, .l-commands { grid-template-columns: 1fr; }
+          .l-tariff, .l-commands, .l-lb { grid-template-columns: 1fr; }
+          .l-ticket-flow { flex-direction: column; }
+          .l-ticket-step + .l-ticket-step { margin-left: 0; margin-top: 1rem; }
           .l-nav-links { display: none; }
         }
         @media (max-width: 520px) {
@@ -149,30 +174,30 @@ export default function Landing() {
 
       <section className="l-hero">
         <div>
-          <span className="l-eyebrow"><span className="l-eyebrow-dot" />ALPHA · discord.js v14</span>
-          <h1 className="l-h1">Moderacja i poziomy,<br /><em>bez zbędnego bałaganu.</em></h1>
-          <p className="l-sub">UmenBot pilnuje porządku na serwerze według progów, które sam ustalisz — i nagradza aktywność poziomami. Wszystko konfigurujesz z panelu WWW, zalogowany przez Discord.</p>
+          <span className="l-eyebrow"><span className="l-eyebrow-dot" />ALPHA · aktywnie rozwijany</span>
+          <h1 className="l-h1">Twój serwer zasługuje<br /><em>na porządek.</em></h1>
+          <p className="l-sub">UmenBot pilnuje zasad, obsługuje zgłoszenia i nagradza aktywnych — żebyś Ty nie musiał robić tego ręcznie o 2 w nocy. Konfiguracja z panelu, bez komend w konsoli.</p>
           <div className="l-cta-row">
             <a className="btn btn-primary" href={inviteHref}>Dodaj do serwera</a>
-            <a className="btn btn-ghost" href="#taryfikator">Zobacz jak działa taryfikator</a>
+            <a className="btn btn-ghost" href="#funkcje">Zobacz co potrafi</a>
           </div>
           <div className="l-stats">
             <span><b>{info?.guildCount ?? '—'}</b> serwerów</span>
-            <span><b>{PUBLIC_COMMANDS.length + MOD_COMMANDS.length}+</b> komend</span>
-            <span><b>ISC</b> licencja</span>
+            <span><b>za darmo</b> w użyciu</span>
+            <span><b>panel WWW</b> w komplecie</span>
           </div>
         </div>
-        <div className="l-hero-visual">
-          <div className="l-hero-visual-label">/taryfikator lista</div>
-          <TariffLadder steps={HERO_LADDER} />
+        <div>
+          <div className="l-hero-visual-label">taryfikator ostrzeżeń</div>
+          <TariffLadder steps={WARN_LADDER} />
         </div>
       </section>
 
       <section className="l-section" id="funkcje">
         <div className="l-section-head">
           <span className="l-kicker">Funkcje</span>
-          <h2 className="l-h2">Wszystko czego potrzebuje serwer</h2>
-          <p className="l-p">Moderacja, aktywność i konfiguracja — trzy rzeczy, które UmenBot robi dobrze zamiast robić wszystkiego po trochu.</p>
+          <h2 className="l-h2">Cztery rzeczy, które naprawdę odciążają admina</h2>
+          <p className="l-p">Bez zalewu funkcji, których nikt nie używa — tylko to, co realnie zmniejsza robotę na serwerze.</p>
         </div>
         <div className="l-features">
           {FEATURES.map(f => (
@@ -188,10 +213,10 @@ export default function Landing() {
         <div className="l-section-head">
           <span className="l-kicker">Taryfikator ostrzeżeń</span>
           <h2 className="l-h2">Ty ustalasz progi. Bot je egzekwuje.</h2>
-          <p className="l-p">Dla każdego serwera definiujesz przy ilu ostrzeżeniach ma zajść jaka akcja. Przy nowym warnie bot sprawdza najwyższy próg, który użytkownik osiągnął — i wykonuje go automatycznie.</p>
+          <p className="l-p">Dla każdego serwera definiujesz przy ilu ostrzeżeniach ma zajść jaka akcja. Przy nowym warnie bot sprawdza najwyższy próg i wykonuje go sam — bez Twojego udziału.</p>
         </div>
         <div className="l-tariff">
-          <TariffLadder steps={HERO_LADDER} />
+          <TariffLadder steps={WARN_LADDER} />
           <div>
             <TariffLadder steps={XP_LADDER} />
             <div className="l-tariff-example">
@@ -200,6 +225,66 @@ export default function Landing() {
               <div>$ /warn user:@User reason:"Naruszenie regulaminu"</div>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="l-section" id="tickety">
+        <div className="l-section-head">
+          <span className="l-kicker">Tickety</span>
+          <h2 className="l-h2">Wsparcie bez chaosu w DM-ach</h2>
+          <p className="l-p">Jeden przycisk na kanale, prywatny kanał dla każdego zgłoszenia, pełny transkrypt po zamknięciu. Zero pytań "kto to ogarnie".</p>
+        </div>
+        <div className="l-ticket-flow">
+          <div className="l-ticket-step">
+            <div className="l-ticket-num">01</div>
+            <h4>Użytkownik klika</h4>
+            <p>Przycisk "Utwórz ticket" pod embedem na wybranym kanale.</p>
+          </div>
+          <div className="l-ticket-step">
+            <div className="l-ticket-num">02</div>
+            <h4>Powstaje prywatny kanał</h4>
+            <p>Widzi go tylko autor zgłoszenia i rola supportu, którą ustawisz w panelu.</p>
+          </div>
+          <div className="l-ticket-step">
+            <div className="l-ticket-num">03</div>
+            <h4>Zamknięcie i transkrypt</h4>
+            <p>Po zamknięciu bot zapisuje pełną rozmowę na kanale logów i usuwa kanał.</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="l-section" id="ranking">
+        <div className="l-section-head">
+          <span className="l-kicker">Poziomy</span>
+          <h2 className="l-h2">Aktywność, która się opłaca</h2>
+          <p className="l-p">Każda wiadomość dodaje XP. Poziomy odblokowują role-nagrody, które sam skonfigurujesz — a ranking pokazuje, kto jest najbardziej zaangażowany.</p>
+        </div>
+        <div className="l-lb">
+          <div className="l-lb-card">
+            {LEADERBOARD_PREVIEW.map(e => (
+              <div className="l-lb-row" key={e.rank}>
+                <span className="l-lb-rank">#{e.rank}</span>
+                <div className="l-lb-avatar" />
+                <span className="l-lb-name">{e.name}</span>
+                <span className="l-lb-level">poziom {e.level}</span>
+              </div>
+            ))}
+          </div>
+          <p className="l-p">Przykładowy widok — <code className="mono">/leaderboard</code> pokazuje top 10 na Twoim serwerze, ten sam ranking widzisz też na żywo w panelu.</p>
+        </div>
+      </section>
+
+      <section className="l-section">
+        <div className="l-section-head">
+          <span className="l-kicker">W budowie</span>
+          <h2 className="l-h2">System ekonomii</h2>
+          <p className="l-p">Wirtualna waluta, sklep i mini-gry — w aktywnym rozwoju. Struktura komend już istnieje, logika jeszcze nie jest gotowa do użycia.</p>
+        </div>
+        <div className="l-economy">
+          <div className="l-economy-cmds">
+            {ECONOMY_PLANNED.map(c => <code key={c}>{c}</code>)}
+          </div>
+          <span className="l-soon-badge">wkrótce</span>
         </div>
       </section>
 
@@ -229,7 +314,7 @@ export default function Landing() {
         <div className="l-panel-teaser">
           <div>
             <h3>Panel WWW do zarządzania</h3>
-            <p>Zaloguj się przez Discord i skonfiguruj XP rate, nagrody za poziomy i blacklisty — bez dotykania bazy danych.</p>
+            <p>Zaloguj się przez Discord i skonfiguruj XP, tickety i nagrody za poziomy — bez dotykania bazy danych.</p>
             {loading ? null : user ? (
               <Link to="/panel" className="btn btn-primary">Przejdź do panelu</Link>
             ) : (

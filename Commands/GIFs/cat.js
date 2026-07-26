@@ -7,7 +7,7 @@ const {
   const { getRandomGifUrl } = require("../../Function/tenorGif");
   module.exports = {
     data: new SlashCommandBuilder()
-      .setName("koty")
+      .setName("cat")
       .setDescription("Wysyła losowego GIFa z kotami"),
   
     /**

@@ -38,7 +38,9 @@ export default function PanelLayout({ user, children }) {
         <div className="pl-logo"><Link to="/">Umen<span style={{ color: 'var(--accent)' }}>Bot</span></Link></div>
         <nav className="pl-nav">
           {navItem('/panel', 'Twoje serwery')}
-          {id && navItem(`/guilds/${id}/settings`, 'Ustawienia serwera')}
+          {id && navItem(`/guilds/${id}/settings`, 'XP i nagrody')}
+          {id && navItem(`/guilds/${id}/tickets`, 'Tickety')}
+          {id && navItem(`/guilds/${id}/leaderboard`, 'Ranking')}
         </nav>
         {user && (
           <div className="pl-user">

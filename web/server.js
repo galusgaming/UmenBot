@@ -6,7 +6,16 @@ const DiscordStrategy = require("passport-discord").Strategy;
 const path = require("path");
 const fs = require("fs");
 const chalk = require("chalk");
+const {
+  ChannelType,
+  EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+} = require("discord.js");
 const Settings = require("../Schemas/settings");
+const TicketSettings = require("../Schemas/Ticket");
+const Level = require("../Schemas/level");
 
 function initWeb(client) {
   const app = express();
@@ -79,6 +88,30 @@ function initWeb(client) {
     return (user.guilds || []).filter((g) => botGuildIds.has(g.id));
   }
 
+  const MANAGE_GUILD_BIT = 0x20n;
+  // Verifies the logged-in user actually owns/manages this specific guild
+  // (not just "is logged in"), and that the bot is present there.
+  function requireGuildAccess(req, res, next) {
+    const guildId = req.params.id;
+    if (!client.guilds.cache.has(guildId)) {
+      return res.status(404).json({ ok: false, error: "bot_not_in_guild" });
+    }
+    const membership = (req.user?.guilds || []).find((g) => g.id === guildId);
+    if (!membership) {
+      return res.status(403).json({ ok: false, error: "not_a_member" });
+    }
+    let canManage = !!membership.owner;
+    try {
+      canManage = canManage || (BigInt(membership.permissions || 0) & MANAGE_GUILD_BIT) === MANAGE_GUILD_BIT;
+    } catch (_) {
+      // ignore malformed permissions value
+    }
+    if (!canManage) {
+      return res.status(403).json({ ok: false, error: "insufficient_permissions" });
+    }
+    return next();
+  }
+
   // Routes: auth
   app.get("/login", passport.authenticate("discord"));
   app.get(
@@ -121,7 +154,7 @@ function initWeb(client) {
     res.json({ guilds: managed });
   });
 
-  api.get("/guilds/:id/settings", ensureApiAuth, async (req, res) => {
+  api.get("/guilds/:id/settings", ensureApiAuth, requireGuildAccess, async (req, res) => {
     const guildId = req.params.id;
     const settings = (await Settings.findOne({ guildID: guildId }).lean()) || {
       guildID: guildId,
@@ -132,7 +165,7 @@ function initWeb(client) {
     res.json({ settings });
   });
 
-  api.put("/guilds/:id/settings", ensureApiAuth, async (req, res) => {
+  api.put("/guilds/:id/settings", ensureApiAuth, requireGuildAccess, async (req, res) => {
     const guildId = req.params.id;
     const body = req.body || {};
 
@@ -161,6 +194,123 @@ function initWeb(client) {
       console.error("Error saving settings", err);
       res.status(500).json({ ok: false, error: "save_failed" });
     }
+  });
+
+  // Roles/channels for pickers in the panel (ticket settings, role rewards, blacklists)
+  api.get("/guilds/:id/roles", ensureApiAuth, requireGuildAccess, async (req, res) => {
+    const guild = client.guilds.cache.get(req.params.id);
+    const roles = guild.roles.cache
+      .filter((r) => r.id !== guild.id && !r.managed)
+      .sort((a, b) => b.position - a.position)
+      .map((r) => ({ id: r.id, name: r.name, color: r.hexColor }));
+    res.json({ roles });
+  });
+
+  api.get("/guilds/:id/channels", ensureApiAuth, requireGuildAccess, async (req, res) => {
+    const guild = client.guilds.cache.get(req.params.id);
+    const textChannels = guild.channels.cache
+      .filter((c) => c.type === ChannelType.GuildText)
+      .map((c) => ({ id: c.id, name: c.name }));
+    const categories = guild.channels.cache
+      .filter((c) => c.type === ChannelType.GuildCategory)
+      .map((c) => ({ id: c.id, name: c.name }));
+    res.json({ textChannels, categories });
+  });
+
+  // Ticket system settings — mirrors /setup-ticket
+  api.get("/guilds/:id/ticket-settings", ensureApiAuth, requireGuildAccess, async (req, res) => {
+    const guildId = req.params.id;
+    const settings = (await TicketSettings.findOne({ guildID: guildId }).lean()) || {
+      guildID: guildId,
+      staffRoleID: null,
+      logsChannelID: null,
+      categoryID: null,
+      ticketCount: 0,
+    };
+    res.json({ settings });
+  });
+
+  api.put("/guilds/:id/ticket-settings", ensureApiAuth, requireGuildAccess, async (req, res) => {
+    const guildId = req.params.id;
+    const body = req.body || {};
+    const update = {
+      guildID: guildId,
+      staffRoleID: body.staffRoleID ? String(body.staffRoleID) : null,
+      logsChannelID: body.logsChannelID ? String(body.logsChannelID) : null,
+      categoryID: body.categoryID ? String(body.categoryID) : null,
+    };
+    try {
+      await TicketSettings.findOneAndUpdate({ guildID: guildId }, update, { upsert: true });
+      res.json({ ok: true });
+    } catch (err) {
+      console.error("Error saving ticket settings", err);
+      res.status(500).json({ ok: false, error: "save_failed" });
+    }
+  });
+
+  // Posts the "open a ticket" panel (embed + button) to a chosen channel —
+  // same output as running /setup-ticket, but from the web panel.
+  api.post("/guilds/:id/ticket-panel", ensureApiAuth, requireGuildAccess, async (req, res) => {
+    const guildId = req.params.id;
+    const { channelId } = req.body || {};
+    const guild = client.guilds.cache.get(guildId);
+    const settings = await TicketSettings.findOne({ guildID: guildId }).lean();
+    if (!settings?.staffRoleID || !settings?.logsChannelID) {
+      return res.status(400).json({ ok: false, error: "not_configured" });
+    }
+    const channel = guild?.channels.cache.get(channelId);
+    if (!channel || channel.type !== ChannelType.GuildText) {
+      return res.status(400).json({ ok: false, error: "invalid_channel" });
+    }
+    try {
+      const embed = new EmbedBuilder()
+        .setTitle("🎫 Wsparcie — Otwórz Ticket")
+        .setDescription(
+          "Masz problem, pytanie lub chcesz skontaktować się z obsługą?\n" +
+          "Kliknij przycisk poniżej, aby otworzyć prywatny ticket.\n\n" +
+          "> 📌 Opisz dokładnie swój problem po otwarciu ticketu.\n" +
+          "> ⏱️ Nasz zespół odpowie jak najszybciej."
+        )
+        .setColor(0x5865f2)
+        .setFooter({ text: guild.name, iconURL: guild.iconURL() })
+        .setTimestamp();
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId("ticket_create")
+          .setLabel("📩 Utwórz ticket")
+          .setStyle(ButtonStyle.Primary)
+      );
+      await channel.send({ embeds: [embed], components: [row] });
+      res.json({ ok: true });
+    } catch (err) {
+      console.error("Error sending ticket panel", err);
+      res.status(500).json({ ok: false, error: "send_failed" });
+    }
+  });
+
+  // Read-only leaderboard viewer — same query as /leaderboard
+  api.get("/guilds/:id/leaderboard", ensureApiAuth, requireGuildAccess, async (req, res) => {
+    const guildId = req.params.id;
+    const guild = client.guilds.cache.get(guildId);
+    const top = await Level.find({ guildID: guildId })
+      .sort({ level: -1, xp: -1 })
+      .limit(10)
+      .lean();
+    const entries = await Promise.all(
+      top.map(async (doc, i) => {
+        let username = doc.userID;
+        let avatar = null;
+        try {
+          const member = await guild.members.fetch(String(doc.userID)).catch(() => null);
+          if (member?.user) {
+            username = `${member.user.username}`;
+            avatar = member.user.displayAvatarURL({ size: 64 });
+          }
+        } catch (_) {}
+        return { rank: i + 1, userID: doc.userID, username, avatar, level: doc.level, xp: doc.xp };
+      })
+    );
+    res.json({ entries });
   });
 
   app.use("/api", api);

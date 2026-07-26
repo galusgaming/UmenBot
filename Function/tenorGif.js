@@ -1,82 +1,68 @@
-const DEFAULT_USER_AGENT = "UmenBot/1.0 (https://github.com/galusgaming/UmenBot)";
+const GIPHY_API_KEY = process.env.GIPHY_API_KEY;
+const GIPHY_BASE_URL = "https://api.giphy.com/v1/gifs/search";
 
-const REACTION_ENDPOINTS = {
-  ban: ["slap", "bonk", "kick"],
-  kiss: ["kiss"],
-  love: ["hug", "cuddle", "blowkiss"],
-};
-
-const ANIMAL_IMAGE_ENDPOINTS = {
-  dog: "dog",
+// Mapowanie komend bota na zapytania wysyłane do Giphy
+const QUERY_MAP = {
   cat: "cat",
+  dog: "dog",
+  frog: "frog",
+  kiss: "anime kiss",
+  love: "anime hug",
 };
 
-function buildHeaders(extraHeaders = {}) {
-  return {
-    "user-agent": DEFAULT_USER_AGENT,
-    ...extraHeaders,
-  };
+function toGiphyLang(locale) {
+  if (!locale) return "en";
+  return String(locale).split(/[_-]/)[0].toLowerCase();
 }
 
-async function fetchJson(url) {
-  const response = await fetch(url, {
-    headers: buildHeaders(),
+function toGiphyRating(filter) {
+  const map = { low: "g", medium: "pg", high: "pg-13" };
+  return map[String(filter || "medium").toLowerCase()] || "pg";
+}
+
+/**
+ * @param {string} query klucz komendy (np. "cat", "kiss")
+ * @param {{ Locale?: string, Filter?: string }} [options]
+ */
+async function getRandomGifUrl(query, options = {}) {
+  if (!GIPHY_API_KEY) {
+    throw new Error("Brak GIPHY_API_KEY w zmiennych środowiskowych.");
+  }
+
+  const normalizedQuery = String(query).trim().toLowerCase();
+  const searchTerm = QUERY_MAP[normalizedQuery] || normalizedQuery;
+
+  const params = new URLSearchParams({
+    api_key: GIPHY_API_KEY,
+    q: searchTerm,
+    limit: "25",
+    rating: toGiphyRating(options.Filter),
+    lang: toGiphyLang(options.Locale),
   });
 
+  const response = await fetch(`${GIPHY_BASE_URL}?${params.toString()}`);
+
   if (!response.ok) {
-    throw new Error(`API zwróciło błąd ${response.status}`);
+    throw new Error(`Giphy API zwróciło błąd ${response.status}`);
   }
 
-  return response.json();
-}
+  const data = await response.json();
+  const results = data?.data ?? [];
 
-async function getAnimalImageUrl(query) {
-  if (query === "frog") {
-    const response = await fetch("https://loremflickr.com/640/480/frog", {
-      headers: buildHeaders(),
-    });
-
-    if (!response.ok) {
-      throw new Error(`API zwróciło błąd ${response.status}`);
-    }
-
-    return response.url;
+  if (results.length === 0) {
+    throw new Error(`Brak wyników GIF dla zapytania: ${normalizedQuery}`);
   }
 
-  const endpoint = ANIMAL_IMAGE_ENDPOINTS[query] || query;
-  const data = await fetchJson(`https://some-random-api.com/img/${encodeURIComponent(endpoint)}`);
-  const imageUrl = data?.link;
+  const randomResult = results[Math.floor(Math.random() * results.length)];
+  const gifUrl =
+    randomResult?.images?.original?.url ||
+    randomResult?.images?.downsized?.url;
 
-  if (!imageUrl) {
-    throw new Error(`Nie udało się pobrać obrazka dla zapytania: ${query}`);
+  if (!gifUrl) {
+    throw new Error(`Nie udało się odczytać adresu GIFa dla zapytania: ${normalizedQuery}`);
   }
 
-  return imageUrl;
-}
-
-async function getReactionGifUrl(query) {
-  const candidates = REACTION_ENDPOINTS[query] || [query];
-
-  for (const endpoint of candidates) {
-    const data = await fetchJson(`https://nekos.best/api/v2/${encodeURIComponent(endpoint)}`);
-    const gifUrl = data?.results?.[0]?.url;
-
-    if (gifUrl) {
-      return gifUrl;
-    }
-  }
-
-  throw new Error(`Nie udało się pobrać GIFa dla zapytania: ${query}`);
-}
-
-async function getRandomGifUrl(query) {
-  const normalizedQuery = String(query).trim().toLowerCase();
-
-  if (normalizedQuery === "frog" || Object.prototype.hasOwnProperty.call(ANIMAL_IMAGE_ENDPOINTS, normalizedQuery)) {
-    return getAnimalImageUrl(normalizedQuery);
-  }
-
-  return getReactionGifUrl(normalizedQuery);
+  return gifUrl;
 }
 
 module.exports = {
