@@ -8,6 +8,7 @@ const {
   AttachmentBuilder,
 } = require('discord.js');
 const TicketSettings = require('../Schemas/Ticket');
+const { recordPanelAudit } = require('./panelAudit');
 
 /**
  * Pobiera ustawienia ticketów dla serwera.
@@ -15,6 +16,124 @@ const TicketSettings = require('../Schemas/Ticket');
  */
 async function getSettings(guildId) {
   return TicketSettings.findOne({ guildID: guildId });
+}
+
+function statusLabel(status) {
+  if (status === 'waiting-user') return 'Czeka na usera';
+  if (status === 'waiting-staff') return 'W toku';
+  return 'Nowy';
+}
+
+function buildTicketControls() {
+  return [
+    new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId('ticket_status_open').setLabel('Nowy').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId('ticket_status_waiting_staff').setLabel('W toku').setStyle(ButtonStyle.Primary),
+      new ButtonBuilder().setCustomId('ticket_status_waiting_user').setLabel('Czeka na usera').setStyle(ButtonStyle.Success),
+    ),
+    new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId('ticket_assign_me').setLabel('Przypisz do mnie').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId('ticket_unassign_me').setLabel('Odprzypisz ode mnie').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId('ticket_close').setLabel('Zamknij ticket').setStyle(ButtonStyle.Danger),
+    ),
+  ];
+}
+
+function buildTicketEmbed({ guild, ticketNumber, user, ticketMeta }) {
+  const embed = new EmbedBuilder()
+    .setTitle(`🎫 Ticket #${String(ticketNumber).padStart(4, '0')}`)
+    .setDescription(
+      `Cześć ${user}! Opisz swój problem lub pytanie, a nasz zespół odpowie jak najszybciej.\n\n` +
+      `Aby zamknąć ticket, użyj przycisku poniżej.`
+    )
+    .setColor(0x5865f2)
+    .addFields(
+      { name: '👤 Użytkownik', value: `${user} (${user.id})`, inline: true },
+      { name: '📌 Status', value: statusLabel(ticketMeta?.status), inline: true },
+      { name: '🛠️ Przypisany', value: ticketMeta?.assigneeId ? `<@${ticketMeta.assigneeId}>` : 'Brak', inline: true },
+    )
+    .setTimestamp()
+    .setFooter({ text: `${guild.name}`, iconURL: guild.iconURL() });
+
+  return embed;
+}
+
+async function findTicketHeaderMessage(channel) {
+  const recent = await channel.messages.fetch({ limit: 20 }).catch(() => null);
+  if (!recent) return null;
+
+  return recent.find((message) => {
+    const embed = message.embeds?.[0];
+    return message.author?.bot && embed?.title?.startsWith('🎫 Ticket #');
+  }) || null;
+}
+
+async function syncTicketHeaderMessage(channel, client) {
+  const ticketMeta = parseTicketTopic(channel?.topic);
+  if (!ticketMeta) return null;
+
+  const headerMessage = await findTicketHeaderMessage(channel);
+  if (!headerMessage) return null;
+
+  const guild = channel.guild;
+  const ticketNumberMatch = channel.name?.match(/ticket-(\d+)/i);
+  const ticketNumber = ticketNumberMatch ? Number(ticketNumberMatch[1]) : 0;
+  const user = await client.users.fetch(ticketMeta.ownerId).catch(() => null);
+  if (!user) return null;
+
+  const embed = buildTicketEmbed({ guild, ticketNumber, user, ticketMeta });
+  await headerMessage.edit({ embeds: [embed], components: buildTicketControls() }).catch(() => {});
+  return headerMessage;
+}
+
+async function applyTicketMeta(channel, client, patch) {
+  const updated = await updateTicketTopic(channel, patch);
+  await syncTicketHeaderMessage(channel, client);
+  return updated;
+}
+
+function parseTicketTopic(topic) {
+  const raw = String(topic || '');
+  if (!raw.startsWith('ticket:')) return null;
+
+  const parts = raw.split(';').map((part) => part.trim()).filter(Boolean);
+  const [ownerPart, ...metaParts] = parts;
+  const ownerId = ownerPart.replace('ticket:', '') || null;
+  const meta = { ownerId, status: 'open', assigneeId: null };
+
+  for (const part of metaParts) {
+    const [key, ...valueParts] = part.split('=');
+    const value = valueParts.join('=').trim();
+    if (key === 'status' && value) meta.status = value;
+    if (key === 'assignee') meta.assigneeId = value || null;
+  }
+
+  return meta;
+}
+
+function buildTicketTopic({ ownerId, status = 'open', assigneeId = null }) {
+  const safeOwnerId = String(ownerId || '').trim();
+  if (!safeOwnerId) throw new Error('owner_id_required');
+
+  const parts = [`ticket:${safeOwnerId}`, `status=${status || 'open'}`];
+  if (assigneeId) parts.push(`assignee=${String(assigneeId).trim()}`);
+  return parts.join(';');
+}
+
+async function updateTicketTopic(channel, patch) {
+  const parsed = parseTicketTopic(channel?.topic);
+  if (!parsed) throw new Error('not_a_ticket_channel');
+
+  const nextTopic = buildTicketTopic({
+    ownerId: parsed.ownerId,
+    status: patch?.status || parsed.status,
+    assigneeId: Object.prototype.hasOwnProperty.call(patch || {}, 'assigneeId')
+      ? patch.assigneeId
+      : parsed.assigneeId,
+  });
+
+  await channel.setTopic(nextTopic);
+  return parseTicketTopic(nextTopic);
 }
 
 /**
@@ -34,7 +153,7 @@ async function createTicket(interaction, user) {
   // Sprawdź czy user już ma otwarty ticket
   const existingChannel = interaction.guild.channels.cache.find(
     (ch) => ch.name === `ticket-${user.username.toLowerCase().replace(/[^a-z0-9]/g, '')}-` ||
-             ch.topic === `ticket:${user.id}`
+             parseTicketTopic(ch.topic)?.ownerId === user.id
   );
   if (existingChannel) {
     return interaction.editReply({
@@ -93,7 +212,7 @@ async function createTicket(interaction, user) {
   const channelOptions = {
     name: `ticket-${String(ticketNumber).padStart(4, '0')}`,
     type: ChannelType.GuildText,
-    topic: `ticket:${user.id}`,
+    topic: buildTicketTopic({ ownerId: user.id }),
     permissionOverwrites,
   };
 
@@ -104,30 +223,25 @@ async function createTicket(interaction, user) {
 
   const ticketChannel = await interaction.guild.channels.create(channelOptions);
 
-  // Embed powitalny w kanale ticketu
-  const embed = new EmbedBuilder()
-    .setTitle(`🎫 Ticket #${String(ticketNumber).padStart(4, '0')}`)
-    .setDescription(
-      `Cześć ${user}! Opisz swój problem lub pytanie, a nasz zespół odpowie jak najszybciej.\n\n` +
-      `Aby zamknąć ticket, kliknij przycisk poniżej.`
-    )
-    .setColor(0x5865f2)
-    .addFields({ name: '👤 Użytkownik', value: `${user} (${user.id})`, inline: true })
-    .setTimestamp()
-    .setFooter({ text: `${interaction.guild.name}`, iconURL: interaction.guild.iconURL() });
+  await recordPanelAudit({
+    guildID: interaction.guild.id,
+    actorId: user.id,
+    actorName: user.username,
+    action: 'ticket_created',
+    targetType: 'ticket',
+    targetId: ticketChannel.id,
+    details: { ticketNumber, ownerId: user.id },
+  })
 
-  const row = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId('ticket_close')
-      .setLabel('🔒 Zamknij ticket')
-      .setStyle(ButtonStyle.Danger)
-  );
+  const ticketMeta = parseTicketTopic(channelOptions.topic);
+  const embed = buildTicketEmbed({ guild: interaction.guild, ticketNumber, user, ticketMeta });
+  const components = buildTicketControls();
 
   const staffRole = interaction.guild.roles.cache.get(settings.staffRoleID);
   await ticketChannel.send({
     content: staffRole ? `${user} | ${staffRole}` : `${user}`,
     embeds: [embed],
-    components: [row],
+    components,
   });
 
   await interaction.editReply({
@@ -139,47 +253,65 @@ async function createTicket(interaction, user) {
  * Zamyka ticket: generuje transkrypt, wysyła na logi, usuwa kanał.
  */
 async function closeTicket(interaction) {
-  const channel = interaction.channel;
-
-  // Sprawdź czy to kanał ticketu
-  if (!channel.topic?.startsWith('ticket:')) {
-    return interaction.reply({
-      content: '❌ Ta komenda działa tylko w kanałach ticketów.',
-      ephemeral: true,
-    });
-  }
-
-  const settings = await getSettings(interaction.guild.id);
-  if (!settings?.logsChannelID) {
-    return interaction.reply({
-      content: '❌ Kanał logów nie jest skonfigurowany.',
-      ephemeral: true,
-    });
-  }
-
   await interaction.reply({
     content: '🔒 Zamykanie ticketu, generowanie transkryptu...',
   });
 
-  // Pobierz wiadomości (max 500)
+  try {
+    await closeTicketChannel({
+      channel: interaction.channel,
+      guild: interaction.guild,
+      logsChannelID: (await getSettings(interaction.guild.id))?.logsChannelID || null,
+      closedByTag: interaction.user.tag,
+      client: interaction.client,
+      audit: {
+        guildID: interaction.guild.id,
+        actorId: interaction.user.id,
+        actorName: interaction.user.username,
+        action: 'ticket_closed',
+        targetType: 'ticket',
+        targetId: interaction.channel.id,
+      },
+    });
+  } catch (err) {
+    console.error('Error closing ticket', err);
+    if (interaction.replied || interaction.deferred) {
+      return interaction.followUp({
+        content: '❌ Nie udało się zamknąć ticketu.',
+        ephemeral: true,
+      }).catch(() => {});
+    }
+    return interaction.reply({ content: '❌ Nie udało się zamknąć ticketu.', ephemeral: true });
+  }
+}
+
+async function closeTicketChannel({ channel, guild, logsChannelID, closedByTag, client, audit = null }) {
+  const ticketMeta = parseTicketTopic(channel?.topic);
+  if (!ticketMeta) {
+    throw new Error('not_a_ticket_channel');
+  }
+
+  if (!logsChannelID) {
+    throw new Error('logs_channel_not_configured');
+  }
+
   const transcript = await generateTranscript(channel);
   const transcriptBuffer = Buffer.from(transcript, 'utf-8');
   const attachment = new AttachmentBuilder(transcriptBuffer, {
     name: `transkrypt-${channel.name}.txt`,
   });
 
-  // Wyślij transkrypt na kanał logów
-  const logsChannel = interaction.guild.channels.cache.get(settings.logsChannelID);
+  const logsChannel = guild.channels.cache.get(logsChannelID);
   if (logsChannel) {
-    const userId = channel.topic.replace('ticket:', '');
-    const user = await interaction.client.users.fetch(userId).catch(() => null);
+    const userId = ticketMeta.ownerId;
+    const user = await client.users.fetch(userId).catch(() => null);
 
     const logEmbed = new EmbedBuilder()
       .setTitle(`🔒 Ticket zamknięty — ${channel.name}`)
       .setColor(0xed4245)
       .addFields(
         { name: '👤 Właściciel', value: user ? `${user.tag} (${user.id})` : userId, inline: true },
-        { name: '🛡️ Zamknięty przez', value: `${interaction.user.tag}`, inline: true },
+        { name: '🛡️ Zamknięty przez', value: closedByTag, inline: true },
         { name: '📅 Data', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false }
       )
       .setTimestamp();
@@ -187,9 +319,12 @@ async function closeTicket(interaction) {
     await logsChannel.send({ embeds: [logEmbed], files: [attachment] });
   }
 
-  // Usuń kanał po 3 sekundach
   await new Promise((resolve) => setTimeout(resolve, 3000));
-  await channel.delete(`Ticket zamknięty przez ${interaction.user.tag}`).catch(() => {});
+  await channel.delete(`Ticket zamknięty przez ${closedByTag}`).catch(() => {});
+
+  if (audit) {
+    await recordPanelAudit(audit);
+  }
 }
 
 /**
@@ -232,4 +367,25 @@ async function generateTranscript(channel) {
   return header + lines.join('\n');
 }
 
-module.exports = { createTicket, closeTicket, getSettings };
+function hasTicketStaffAccess(member, settings, guild) {
+  if (!member) return false;
+  if (member.permissions?.has?.(PermissionFlagsBits.Administrator)) return true;
+  if (settings?.staffRoleID && member.roles?.cache?.has?.(settings.staffRoleID)) return true;
+  return false;
+}
+
+module.exports = {
+  createTicket,
+  closeTicket,
+  closeTicketChannel,
+  getSettings,
+  parseTicketTopic,
+  buildTicketTopic,
+  updateTicketTopic,
+  syncTicketHeaderMessage,
+  applyTicketMeta,
+  buildTicketControls,
+  buildTicketEmbed,
+  hasTicketStaffAccess,
+  statusLabel,
+};

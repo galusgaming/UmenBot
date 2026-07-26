@@ -18,11 +18,12 @@ export default function Panel() {
         .pg-head { margin-bottom: 1.75rem; }
         .pg-head h1 { font-family: var(--font-display); font-size: 1.6rem; margin: 0 0 0.4rem; }
         .pg-head p { color: var(--text-muted); margin: 0; }
-        .pg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; }
-        .pg-guild { display: flex; align-items: center; gap: 12px; padding: 1.1rem; }
+        .pg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.1rem; }
+        .pg-guild { display: flex; align-items: center; gap: 14px; padding: 1.35rem; min-height: 92px; }
         .pg-guild:hover { border-color: var(--border-strong); }
-        .pg-icon { width: 40px; height: 40px; border-radius: 10px; background: var(--surface-2); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); color: var(--text-muted); flex-shrink: 0; }
-        .pg-name { font-size: 0.92rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .pg-icon { width: 52px; height: 52px; border-radius: 14px; background: var(--surface-2); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); color: var(--text-muted); flex-shrink: 0; overflow: hidden; }
+        .pg-icon img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .pg-name { font-size: 0.98rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .pg-empty { color: var(--text-muted); }
       `}</style>
       <div className="pg-head">
@@ -35,9 +36,13 @@ export default function Panel() {
       )}
       <div className="pg-grid">
         {guilds && guilds.map(g => (
-          <Link to={`/guilds/${g.id}/settings`} className="card pg-guild" key={g.id}>
-            <div className="pg-icon">{g.name?.slice(0, 1)?.toUpperCase() || '?'}</div>
-            <span className="pg-name">{g.name}</span>
+          <Link to={`/guilds/${g.id}/dashboard`} className="card pg-guild" key={g.id}>
+            <div className="pg-icon">
+              {g.iconUrl ? <img src={g.iconUrl} alt="" /> : <span>{g.name?.slice(0, 1)?.toUpperCase() || '?'}</span>}
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <span className="pg-name">{g.name}</span>
+            </div>
           </Link>
         ))}
       </div>

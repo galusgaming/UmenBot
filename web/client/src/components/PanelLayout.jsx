@@ -7,7 +7,7 @@ export default function PanelLayout({ user, children }) {
   const loc = useLocation()
 
   const navItem = (to, label) => (
-    <Link to={to} className={`pl-navitem${loc.pathname === to ? ' active' : ''}`}>{label}</Link>
+    <Link to={to} className={`pl-navitem${loc.pathname === to || loc.pathname.startsWith(`${to}/`) ? ' active' : ''}`}>{label}</Link>
   )
 
   return (
@@ -38,6 +38,7 @@ export default function PanelLayout({ user, children }) {
         <div className="pl-logo"><Link to="/">Umen<span style={{ color: 'var(--accent)' }}>Bot</span></Link></div>
         <nav className="pl-nav">
           {navItem('/panel', 'Twoje serwery')}
+          {id && navItem(`/guilds/${id}/dashboard`, 'Dashboard')}
           {id && navItem(`/guilds/${id}/settings`, 'XP i nagrody')}
           {id && navItem(`/guilds/${id}/tickets`, 'Tickety')}
           {id && navItem(`/guilds/${id}/leaderboard`, 'Ranking')}
