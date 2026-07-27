@@ -40,7 +40,7 @@ const LEADERBOARD_PREVIEW = [
   { rank: 3, name: 'stary_wilk', level: 27 },
 ]
 
-const ECONOMY_LIVE = ['/work', '/daily', '/shop', '/buy', '/sell', '/rob', '/coinflip', '/slots', '/transfer']
+const ECONOMY_LIVE = ['/work', '/daily', '/shop', '/buy', '/sell', '/inventory', '/rob', '/coinflip', '/slots', '/transfer']
 
 const PUBLIC_COMMANDS = [
   ['/ping', 'sprawdza opóźnienie'],
@@ -55,6 +55,7 @@ const PUBLIC_COMMANDS = [
   ['/shop', 'sklep serwera'],
   ['/buy item', 'kupuje przedmiot'],
   ['/sell item', 'sprzedaje przedmiot'],
+  ['/inventory', 'pokazuje ekwipunek'],
   ['/transfer user amount', 'przelew do innego użytkownika'],
   ['/rob user', 'próba okradzenia gracza'],
   ['/coinflip amount', 'orzeł czy reszka'],

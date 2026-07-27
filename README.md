@@ -7,9 +7,9 @@ Lekki i modularny bot Discord oparty o discord.js v14 — moderacja, poziomy, in
 [![node](https://img.shields.io/badge/node-%3E%3D18.0-339933?logo=node.js&logoColor=white)](https://nodejs.org)
 [![discord.js](https://img.shields.io/badge/discord.js-v14-5865F2?logo=discord&logoColor=white)](https://discord.js.org)
 [![license](https://img.shields.io/badge/license-ISC-blue.svg)](./LICENSE)
-![status](https://img.shields.io/badge/status-ALPHA-orange)
+![status](https://img.shields.io/badge/status-stable-brightgreen)
 ![docker](https://img.shields.io/badge/docker-ready-2496ED?logo=docker&logoColor=white)
-![version](https://img.shields.io/badge/version-v1.3.0-blue)
+![version](https://img.shields.io/badge/version-v1.4.0-blue)
 
 </div>
 
@@ -32,9 +32,9 @@ Lekki i modularny bot Discord oparty o discord.js v14 — moderacja, poziomy, in
 
 ## Wprowadzenie
 
-UmenBot to bot dla Discorda (discord.js v14) skupiony na prostocie i czytelnej strukturze. Zawiera m.in.: system ostrzeżeń z taryfikatorem (automatyczne akcje kick/ban/timeout), podstawowe komendy moderacji, komendy publiczne oraz integrację z MongoDB.
+UmenBot to bot dla Discorda (discord.js v14) skupiony na prostocie i czytelnej strukturze. Zawiera m.in.: system ostrzeżeń z taryfikatorem (automatyczne akcje kick/ban/timeout), poziomy z rolami-nagrodami, system ticketów, system ekonomii (praca, sklep, mini-gry), podstawowe komendy moderacji oraz integrację z MongoDB.
 
-Projekt jest w fazie ALPHA — mogą występować błędy. Używasz na własną odpowiedzialność.
+Projekt osiągnął stabilną wersję v1.4.0 — podstawowe funkcje (moderacja, poziomy, tickety, ekonomia) są przetestowane i gotowe do użycia produkcyjnego. Mimo to, jak w każdym projekcie, mogą zdarzyć się błędy — w razie problemów zgłoś je przez Issues.
 
 Autor: GalusGaming (Discord: `galusgaming4096`)
 
@@ -137,6 +137,7 @@ W panelu ustawisz:
 - Role-rewards: listę ról przyznawanych po osiągnięciu poziomu (poziom -> ID roli)
 - Blacklisty: ID kanałów/użytkowników/ról, dla których nie będzie naliczany XP ani przyjmowane komendy XP
  - Blacklisty: ID kanałów/użytkowników/ról, dla których nie będzie naliczany XP
+- Ekonomia: nazwę/symbol waluty, kwoty `/daily` i `/work`, cooldowny, parametry `/rob` oraz przedmioty w sklepie
 
 Uwaga: Bot wykorzystuje MongoDB do przechowywania ustawień (`Schemas/settings.js`). Zmiany obowiązują zwykle w ciągu kilkudziesięciu sekund (lekki cache) lub od razu po zapisaniu.
 
@@ -181,6 +182,23 @@ Panel będzie dostępny na `http://localhost:3000`.
 - `/help` — lista komend i pomoc
 - `/info` — informacje o bocie/serwerze
 - `/level` — poziomy użytkownika (jeśli skonfigurowane)
+- `/leaderboard` — ranking poziomów na serwerze
+- `/ticket` — otwiera prywatny ticket wsparcia
+
+### Ekonomia
+- `/balance [user]` — stan portfela (własny lub innego użytkownika)
+- `/daily` — codzienna nagroda (z cooldownem)
+- `/work` — losowa praca za monety (z cooldownem)
+- `/shop` — lista przedmiotów dostępnych w sklepie serwera
+- `/buy item` — kupuje przedmiot ze sklepu
+- `/sell item` — sprzedaje przedmiot z ekwipunku (zwrot 50% ceny)
+- `/inventory [user]` — pokazuje ekwipunek
+- `/transfer user amount` — przelewa monety innemu użytkownikowi
+- `/rob user` — próba okradzenia gracza (szansa powodzenia + kara za porażkę)
+- `/coinflip amount [side]` — orzeł czy reszka, podwojenie stawki
+- `/slots amount` — automaty (slot machine)
+
+Ustawienia ekonomii (waluta, kwoty, cooldowny, szanse w `/rob`) oraz przedmioty w sklepie konfigurujesz z panelu WWW — zakładka „Ekonomia".
 
 ### Moderacja
 - `/warn user reason` — nadaje ostrzeżenie, sprawdza taryfikator i w razie progu wykonuje akcję (timeout/kick/ban)
@@ -223,8 +241,10 @@ Szybkie przykłady:
 
 ```
 Commands/
-	Public/            # ping, help, info, level
+	Public/            # ping, help, info, level, leaderboard, ticket, ekonomia (balance/daily/work/shop/buy/sell/inventory/transfer/rob/coinflip/slots)
 	Moderation/        # warn, pardon, ban, unban, clear, taryfikator(...)
+	GIFs/              # komendy z gifami zwierzaczków
+	Developer/         # reload i inne komendy deweloperskie
 configs/
 	config.js          # konfiguracja + dotenv (TOKEN, MONGODB_URL)
 Events/
@@ -232,7 +252,11 @@ Events/
 Schemas/
 	warn.js            # liczniki ostrzeżeń użytkowników (per guild)
 	setWarn.js         # reguły taryfikatora (per guild)
+	Wallet.js          # portfel i ekwipunek użytkownika (per guild)
+	ShopItem.js        # przedmioty sklepu (per guild)
+	EconomySettings.js # konfiguracja ekonomii (waluta, kwoty, cooldowny)
 handlers/            # ładowanie komend/zdarzeń
+web/                 # panel WWW (Express API + React/Vite SPA)
 ```
 
 ---
