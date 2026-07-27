@@ -17,6 +17,9 @@ const Settings = require("../Schemas/settings");
 const TicketSettings = require("../Schemas/Ticket");
 const Level = require("../Schemas/level");
 const PanelAudit = require("../Schemas/PanelAudit");
+const Wallet = require("../Schemas/Wallet");
+const ShopItem = require("../Schemas/ShopItem");
+const EconomySettings = require("../Schemas/EconomySettings");
 const { closeTicketChannel, parseTicketTopic, updateTicketTopic, syncTicketHeaderMessage, applyTicketMeta } = require("../Function/ticketUtils");
 const { recordPanelAudit } = require("../Function/panelAudit");
 
@@ -527,6 +530,198 @@ function initWeb(client) {
           }
         } catch (_) {}
         return { rank: i + 1, userID: doc.userID, username, avatar, level: doc.level, xp: doc.xp };
+      })
+    );
+    res.json({ entries });
+  });
+
+  // Economy settings — currency name, daily/work amounts, rob configuration
+  api.get("/guilds/:id/economy-settings", ensureApiAuth, requireGuildAccess, async (req, res) => {
+    const guildId = req.params.id;
+    const settings = (await EconomySettings.findOne({ guildID: guildId }).lean()) || {
+      guildID: guildId,
+      currencyName: "monety",
+      currencySymbol: "🪙",
+      startingBalance: 100,
+      dailyAmount: 200,
+      workMin: 50,
+      workMax: 250,
+      workCooldownMinutes: 60,
+      robEnabled: true,
+      robSuccessChance: 40,
+      robMaxPercent: 30,
+    };
+    res.json({ settings });
+  });
+
+  api.put("/guilds/:id/economy-settings", ensureApiAuth, requireGuildAccess, async (req, res) => {
+    const guildId = req.params.id;
+    const body = req.body || {};
+
+    const clamp = (val, min, max, fallback) => {
+      const n = Number(val);
+      if (!Number.isFinite(n)) return fallback;
+      return Math.min(max, Math.max(min, n));
+    };
+
+    const update = {
+      guildID: guildId,
+      currencyName: String(body.currencyName || "monety").trim().slice(0, 32) || "monety",
+      currencySymbol: String(body.currencySymbol || "🪙").trim().slice(0, 8) || "🪙",
+      startingBalance: clamp(body.startingBalance, 0, 1_000_000, 100),
+      dailyAmount: clamp(body.dailyAmount, 0, 1_000_000, 200),
+      workMin: clamp(body.workMin, 0, 1_000_000, 50),
+      workMax: clamp(body.workMax, 0, 1_000_000, 250),
+      workCooldownMinutes: clamp(body.workCooldownMinutes, 1, 10_080, 60),
+      robEnabled: !!body.robEnabled,
+      robSuccessChance: clamp(body.robSuccessChance, 0, 100, 40),
+      robMaxPercent: clamp(body.robMaxPercent, 1, 100, 30),
+      updatedBy: req.user?.id,
+    };
+
+    if (update.workMin > update.workMax) {
+      const tmp = update.workMin;
+      update.workMin = update.workMax;
+      update.workMax = tmp;
+    }
+
+    try {
+      await EconomySettings.findOneAndUpdate({ guildID: guildId }, update, { upsert: true });
+      await recordPanelAudit({
+        guildID: guildId,
+        actorId: req.user?.id,
+        actorName: req.user?.username,
+        action: "economy_settings_saved",
+        targetType: "economy-settings",
+        targetId: guildId,
+        details: { currencyName: update.currencyName, dailyAmount: update.dailyAmount, workMin: update.workMin, workMax: update.workMax },
+      });
+      res.json({ ok: true });
+    } catch (err) {
+      console.error("Error saving economy settings", err);
+      res.status(500).json({ ok: false, error: "save_failed" });
+    }
+  });
+
+  // Shop items — CRUD for the guild's shop
+  api.get("/guilds/:id/shop", ensureApiAuth, requireGuildAccess, async (req, res) => {
+    const guildId = req.params.id;
+    const items = await ShopItem.find({ guildID: guildId }).sort({ price: 1 }).lean();
+    res.json({ items });
+  });
+
+  api.post("/guilds/:id/shop", ensureApiAuth, requireGuildAccess, async (req, res) => {
+    const guildId = req.params.id;
+    const body = req.body || {};
+    const name = String(body.name || "").trim();
+    const price = Math.max(0, Math.floor(Number(body.price) || 0));
+
+    if (!name) return res.status(400).json({ ok: false, error: "name_required" });
+
+    try {
+      const item = await ShopItem.create({
+        guildID: guildId,
+        name,
+        price,
+        type: body.type ? String(body.type).trim() : undefined,
+        roleID: body.roleID ? String(body.roleID).trim() : undefined,
+        description: body.description ? String(body.description).trim().slice(0, 200) : undefined,
+      });
+      await recordPanelAudit({
+        guildID: guildId,
+        actorId: req.user?.id,
+        actorName: req.user?.username,
+        action: "shop_item_created",
+        targetType: "shop-item",
+        targetId: String(item._id),
+        details: { name: item.name, price: item.price },
+      });
+      res.json({ ok: true, item });
+    } catch (err) {
+      if (err?.code === 11000) {
+        return res.status(409).json({ ok: false, error: "duplicate_name" });
+      }
+      console.error("Error creating shop item", err);
+      res.status(500).json({ ok: false, error: "create_failed" });
+    }
+  });
+
+  api.put("/guilds/:id/shop/:itemId", ensureApiAuth, requireGuildAccess, async (req, res) => {
+    const guildId = req.params.id;
+    const body = req.body || {};
+    const update = {
+      name: String(body.name || "").trim(),
+      price: Math.max(0, Math.floor(Number(body.price) || 0)),
+      type: body.type ? String(body.type).trim() : undefined,
+      roleID: body.roleID ? String(body.roleID).trim() : null,
+      description: body.description ? String(body.description).trim().slice(0, 200) : undefined,
+    };
+    if (!update.name) return res.status(400).json({ ok: false, error: "name_required" });
+
+    try {
+      const item = await ShopItem.findOneAndUpdate(
+        { _id: req.params.itemId, guildID: guildId },
+        update,
+        { new: true }
+      );
+      if (!item) return res.status(404).json({ ok: false, error: "item_not_found" });
+      await recordPanelAudit({
+        guildID: guildId,
+        actorId: req.user?.id,
+        actorName: req.user?.username,
+        action: "shop_item_updated",
+        targetType: "shop-item",
+        targetId: String(item._id),
+        details: { name: item.name, price: item.price },
+      });
+      res.json({ ok: true, item });
+    } catch (err) {
+      if (err?.code === 11000) {
+        return res.status(409).json({ ok: false, error: "duplicate_name" });
+      }
+      console.error("Error updating shop item", err);
+      res.status(500).json({ ok: false, error: "update_failed" });
+    }
+  });
+
+  api.delete("/guilds/:id/shop/:itemId", ensureApiAuth, requireGuildAccess, async (req, res) => {
+    const guildId = req.params.id;
+    try {
+      const item = await ShopItem.findOneAndDelete({ _id: req.params.itemId, guildID: guildId });
+      if (!item) return res.status(404).json({ ok: false, error: "item_not_found" });
+      await recordPanelAudit({
+        guildID: guildId,
+        actorId: req.user?.id,
+        actorName: req.user?.username,
+        action: "shop_item_deleted",
+        targetType: "shop-item",
+        targetId: String(item._id),
+        details: { name: item.name },
+      });
+      res.json({ ok: true });
+    } catch (err) {
+      console.error("Error deleting shop item", err);
+      res.status(500).json({ ok: false, error: "delete_failed" });
+    }
+  });
+
+  // Read-only richest-users leaderboard — mirrors the level leaderboard viewer
+  api.get("/guilds/:id/economy-leaderboard", ensureApiAuth, requireGuildAccess, async (req, res) => {
+    const guildId = req.params.id;
+    const guild = client.guilds.cache.get(guildId);
+    const top = await Wallet.find({ guildID: guildId }).sort({ balance: -1 }).limit(10).lean();
+    const entries = await Promise.all(
+      top.map(async (doc, i) => {
+        let username = doc.userID;
+        let avatar = null;
+        try {
+          const member = await guild.members.fetch(String(doc.userID)).catch(() => null);
+          if (member?.user) {
+            username = `${member.user.username}`;
+            avatar = member.user.displayAvatarURL({ size: 64 });
+          }
+        } catch (_) {}
+        return { rank: i + 1, userID: doc.userID, username, avatar, balance: doc.balance };
       })
     );
     res.json({ entries });

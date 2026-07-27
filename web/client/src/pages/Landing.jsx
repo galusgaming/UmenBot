@@ -40,7 +40,7 @@ const LEADERBOARD_PREVIEW = [
   { rank: 3, name: 'stary_wilk', level: 27 },
 ]
 
-const ECONOMY_PLANNED = ['/work', '/daily', '/shop', '/rob', '/coinflip', '/transfer']
+const ECONOMY_LIVE = ['/work', '/daily', '/shop', '/buy', '/sell', '/rob', '/coinflip', '/slots', '/transfer']
 
 const PUBLIC_COMMANDS = [
   ['/ping', 'sprawdza opóźnienie'],
@@ -49,6 +49,16 @@ const PUBLIC_COMMANDS = [
   ['/level', 'poziom użytkownika'],
   ['/leaderboard', 'ranking aktywności'],
   ['/ticket', 'otwiera prywatny ticket'],
+  ['/balance', 'stan portfela'],
+  ['/daily', 'codzienna nagroda'],
+  ['/work', 'praca za monety'],
+  ['/shop', 'sklep serwera'],
+  ['/buy item', 'kupuje przedmiot'],
+  ['/sell item', 'sprzedaje przedmiot'],
+  ['/transfer user amount', 'przelew do innego użytkownika'],
+  ['/rob user', 'próba okradzenia gracza'],
+  ['/coinflip amount', 'orzeł czy reszka'],
+  ['/slots amount', 'automaty'],
 ]
 
 const MOD_COMMANDS = [
@@ -139,10 +149,10 @@ export default function Landing() {
         .l-lb-name { flex: 1; font-size: 0.88rem; }
         .l-lb-level { font-family: var(--font-mono); font-size: 0.8rem; color: var(--accent); }
 
-        .l-economy { background: var(--surface); border: 1px dashed var(--border-strong); border-radius: var(--radius); padding: 1.75rem; display: flex; justify-content: space-between; align-items: center; gap: 2rem; flex-wrap: wrap; }
+        .l-economy { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.75rem; display: flex; justify-content: space-between; align-items: center; gap: 2rem; flex-wrap: wrap; }
         .l-economy-cmds { display: flex; gap: 8px; flex-wrap: wrap; }
         .l-economy-cmds code { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted); border: 1px solid var(--border-strong); padding: 0.25rem 0.55rem; border-radius: 6px; }
-        .l-soon-badge { font-family: var(--font-mono); font-size: 0.72rem; color: var(--tier-2); border: 1px solid var(--tier-2); padding: 0.25rem 0.6rem; border-radius: 999px; white-space: nowrap; }
+        .l-live-badge { font-family: var(--font-mono); font-size: 0.72rem; color: var(--tier-1); border: 1px solid var(--tier-1); padding: 0.25rem 0.6rem; border-radius: 999px; white-space: nowrap; }
 
         .l-commands { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
         .l-cmd-group h4 { font-family: var(--font-mono); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); margin-bottom: 1rem; }
@@ -276,15 +286,15 @@ export default function Landing() {
 
       <section className="l-section">
         <div className="l-section-head">
-          <span className="l-kicker">W budowie</span>
-          <h2 className="l-h2">System ekonomii</h2>
-          <p className="l-p">Wirtualna waluta, sklep i mini-gry — w aktywnym rozwoju. Struktura komend już istnieje, logika jeszcze nie jest gotowa do użycia.</p>
+          <span className="l-kicker">Ekonomia</span>
+          <h2 className="l-h2">Wirtualna waluta i sklep</h2>
+          <p className="l-p">Praca, dzienne nagrody, sklep serwera i mini-gry — konfigurujesz stawki, walutę i przedmioty prosto z panelu, bez dotykania bazy danych.</p>
         </div>
         <div className="l-economy">
           <div className="l-economy-cmds">
-            {ECONOMY_PLANNED.map(c => <code key={c}>{c}</code>)}
+            {ECONOMY_LIVE.map(c => <code key={c}>{c}</code>)}
           </div>
-          <span className="l-soon-badge">wkrótce</span>
+          <span className="l-live-badge">aktywne</span>
         </div>
       </section>
 

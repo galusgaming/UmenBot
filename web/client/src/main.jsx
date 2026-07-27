@@ -10,6 +10,7 @@ import Dashboard from './pages/Dashboard'
 import Settings from './pages/Settings'
 import Tickets from './pages/Tickets'
 import Leaderboard from './pages/Leaderboard'
+import Economy from './pages/Economy'
 
 function RequireAuth({ children }) {
   const { user, loading } = useMe()
@@ -35,6 +36,7 @@ function App() {
         <Route path="/guilds/:id/tickets" element={<RequireAuth><Tickets /></RequireAuth>} />
         <Route path="/guilds/:id/tickets/:ticketId" element={<RequireAuth><Tickets /></RequireAuth>} />
         <Route path="/guilds/:id/leaderboard" element={<RequireAuth><Leaderboard /></RequireAuth>} />
+        <Route path="/guilds/:id/economy" element={<RequireAuth><Economy /></RequireAuth>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

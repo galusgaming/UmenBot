@@ -42,6 +42,7 @@ export default function PanelLayout({ user, children }) {
           {id && navItem(`/guilds/${id}/settings`, 'XP i nagrody')}
           {id && navItem(`/guilds/${id}/tickets`, 'Tickety')}
           {id && navItem(`/guilds/${id}/leaderboard`, 'Ranking')}
+          {id && navItem(`/guilds/${id}/economy`, 'Ekonomia')}
         </nav>
         {user && (
           <div className="pl-user">
